@@ -1,0 +1,329 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  TYPE_LABELS,
+  OPERATION_LABELS,
+  type Property,
+  type Operation,
+  type PropertyType,
+} from "@/lib/properties";
+import {
+  savePropertyAction,
+  uploadImageAction,
+  geocodeAction,
+} from "@/app/admin/actions";
+import TagInput from "./TagInput";
+
+const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
+const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
+
+export default function PropertyForm({ property }: { property?: Property }) {
+  const isEdit = !!property;
+  const [image, setImage] = useState(property?.image ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [services, setServices] = useState<string[]>(property?.services ?? []);
+  const [amenities, setAmenities] = useState<string[]>(
+    property?.amenities ?? []
+  );
+  const [highlights, setHighlights] = useState<string[]>(
+    property?.highlights ?? []
+  );
+  const [location, setLocation] = useState(property?.location ?? "");
+  const [coords, setCoords] = useState<[number, number] | undefined>(
+    property?.coords
+  );
+  const [geoState, setGeoState] = useState<{
+    loading: boolean;
+    label?: string;
+    error?: string;
+  }>({ loading: false });
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await uploadImageAction(fd);
+    setUploading(false);
+    if (res.ok && res.image) setImage(res.image);
+    else alert(res.error ?? "Error al subir la imagen");
+  };
+
+  const onGeocode = async () => {
+    if (!location.trim()) return;
+    setGeoState({ loading: true });
+    const res = await geocodeAction(location);
+    if (res.ok && res.coords) {
+      setCoords(res.coords);
+      setGeoState({ loading: false, label: res.label });
+    } else {
+      setGeoState({ loading: false, error: res.error });
+    }
+  };
+
+  return (
+    <form action={savePropertyAction} className="space-y-10">
+      {isEdit && <input type="hidden" name="slug" value={property.slug} />}
+      <input type="hidden" name="image" value={image} />
+      <input type="hidden" name="services" value={JSON.stringify(services)} />
+      <input type="hidden" name="amenities" value={JSON.stringify(amenities)} />
+      <input type="hidden" name="highlights" value={JSON.stringify(highlights)} />
+      {coords && (
+        <>
+          <input type="hidden" name="lat" value={coords[0]} />
+          <input type="hidden" name="lng" value={coords[1]} />
+        </>
+      )}
+
+      {/* Image + basics */}
+      <section className="grid gap-8 lg:grid-cols-[280px_1fr]">
+        {/* Image uploader */}
+        <div>
+          <span className="text-eyebrow text-sage-500">Foto principal</span>
+          <label className="mt-2 flex aspect-[4/5] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-moss-600/25 bg-mint-50/40 text-center transition-colors hover:bg-mint-100/50">
+            {image ? (
+              <span className="relative h-full w-full">
+                <Image
+                  src={image}
+                  alt="Vista previa"
+                  fill
+                  className="object-cover"
+                  sizes="280px"
+                />
+              </span>
+            ) : (
+              <span className="px-4 text-sm text-ink-soft/60">
+                {uploading ? "Comprimiendo…" : "Subí una foto (se comprime sola)"}
+              </span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onUpload}
+              className="hidden"
+            />
+          </label>
+          {image && (
+            <p className="mt-2 text-center text-xs text-sage-500">
+              {uploading ? "Procesando…" : "Clic para cambiar"}
+            </p>
+          )}
+        </div>
+
+        {/* Basics */}
+        <div className="space-y-5">
+          <Field label="Título">
+            <input
+              name="title"
+              required
+              defaultValue={property?.title}
+              className="admin-input"
+              placeholder="Ej: Casa en Barrio Garbín"
+            />
+          </Field>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <Field label="Operación">
+              <select
+                name="operation"
+                defaultValue={property?.operation ?? "venta"}
+                className="admin-input"
+              >
+                {OPERATIONS.map((o) => (
+                  <option key={o} value={o}>
+                    {OPERATION_LABELS[o]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Tipo">
+              <select
+                name="type"
+                defaultValue={property?.type ?? "casa"}
+                className="admin-input"
+              >
+                {TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Precio (US$)">
+              <input
+                name="price"
+                type="number"
+                min="0"
+                required
+                defaultValue={property?.price}
+                className="admin-input"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-4">
+            <Field label="Superficie (m²)">
+              <input
+                name="area"
+                type="number"
+                min="0"
+                required
+                defaultValue={property?.area}
+                className="admin-input"
+              />
+            </Field>
+            <Field label="Dormitorios">
+              <input
+                name="bedrooms"
+                type="number"
+                min="0"
+                defaultValue={property?.bedrooms}
+                className="admin-input"
+                placeholder="—"
+              />
+            </Field>
+            <Field label="Baños">
+              <input
+                name="bathrooms"
+                type="number"
+                min="0"
+                defaultValue={property?.bathrooms}
+                className="admin-input"
+                placeholder="—"
+              />
+            </Field>
+            <Field label="Destacada">
+              <label className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  defaultChecked={property?.featured}
+                  className="h-4 w-4 accent-moss-600"
+                />
+                En portada
+              </label>
+            </Field>
+          </div>
+        </div>
+      </section>
+
+      {/* Location + geocoding */}
+      <section className="rounded-2xl border border-moss-600/10 bg-mint-50/30 p-6">
+        <span className="text-eyebrow text-sage-500">Ubicación</span>
+        <div className="mt-3 grid gap-5 sm:grid-cols-[1fr_auto]">
+          <input
+            name="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="admin-input"
+            placeholder="Dirección: Ej: Libertad 1513, San Rafael"
+          />
+          <button
+            type="button"
+            onClick={onGeocode}
+            disabled={geoState.loading}
+            className="rounded-full bg-moss-600 px-6 py-2.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
+          >
+            {geoState.loading ? "Buscando…" : "📍 Ubicar en el mapa"}
+          </button>
+        </div>
+        <div className="mt-3 grid gap-5 sm:grid-cols-2">
+          <Field label="Zona / Barrio (filtro)">
+            <input
+              name="zone"
+              defaultValue={property?.zone}
+              className="admin-input"
+              placeholder="Ej: Barrio SAT"
+            />
+          </Field>
+          <Field label="Ciudad">
+            <input
+              name="city"
+              defaultValue={property?.city ?? "San Rafael"}
+              className="admin-input"
+            />
+          </Field>
+        </div>
+        {coords && (
+          <p className="mt-3 text-sm text-moss-600">
+            ✓ Ubicada en el mapa ({coords[0].toFixed(4)}, {coords[1].toFixed(4)})
+            {geoState.label && (
+              <span className="text-ink-soft/60"> — {geoState.label}</span>
+            )}
+          </p>
+        )}
+        {geoState.error && (
+          <p className="mt-3 text-sm text-red-600">{geoState.error}</p>
+        )}
+      </section>
+
+      {/* Description */}
+      <Field label="Descripción">
+        <textarea
+          name="description"
+          rows={5}
+          required
+          defaultValue={property?.description}
+          className="admin-input resize-none"
+          placeholder="Descripción atractiva de la propiedad…"
+        />
+      </Field>
+
+      {/* Lists */}
+      <div className="grid gap-8 md:grid-cols-3">
+        <TagInput
+          label="Servicios"
+          value={services}
+          onChange={setServices}
+          suggestions={["Luz", "Agua", "Gas", "Pozo", "Cloacas"]}
+        />
+        <TagInput
+          label="Amenities"
+          value={amenities}
+          onChange={setAmenities}
+          suggestions={["Piscina", "SUM", "Parrilla", "Seguridad 24hs"]}
+        />
+        <TagInput
+          label="Destacados (highlights)"
+          value={highlights}
+          onChange={setHighlights}
+          placeholder="Ej: Piscina climatizada"
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-4 border-t border-moss-600/10 pt-6">
+        <button
+          type="submit"
+          disabled={uploading}
+          className="rounded-full bg-moss-600 px-8 py-3.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
+        >
+          {isEdit ? "Guardar cambios" : "Crear propiedad"}
+        </button>
+        <Link
+          href="/admin/propiedades"
+          className="text-sm text-ink-soft/70 hover:text-moss-600"
+        >
+          Cancelar
+        </Link>
+      </div>
+    </form>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="text-eyebrow text-sage-500">{label}</span>
+      <div className="mt-2">{children}</div>
+    </label>
+  );
+}
