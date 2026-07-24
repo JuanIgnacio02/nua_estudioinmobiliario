@@ -34,7 +34,7 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile bar */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-moss-600/10 bg-bone/90 px-5 py-3 backdrop-blur-xl lg:hidden">
+      <div className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-moss-600/10 bg-bone/95 px-5 backdrop-blur-xl lg:hidden">
         <Logo className="h-5 w-auto text-moss-600" />
         <button
           onClick={() => setOpen((o) => !o)}
@@ -46,8 +46,10 @@ export default function AdminSidebar() {
 
       <aside
         className={`${
-          open ? "block" : "hidden"
-        } border-b border-moss-600/10 bg-mint-50/40 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r`}
+          open
+            ? "fixed inset-x-0 bottom-0 top-14 z-40 block overflow-y-auto bg-bone"
+            : "hidden"
+        } lg:static lg:top-0 lg:z-auto lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-visible lg:border-r lg:border-moss-600/10 lg:bg-mint-50/40`}
       >
         <div className="flex h-full flex-col p-5">
           <Link href="/admin" className="mb-10 hidden items-center gap-3 px-2 lg:flex">
