@@ -52,7 +52,9 @@ export default async function PropertyDetail({
     `Hola NÚA, me interesa la propiedad "${p.title}" (${formatPrice(p)}). ¿Podrían darme más información?`
   );
 
-  // Christie's-style stat row: big number + small label.
+  // Christie's-style stat row: big number + small label. Keep it to 4 tiles so
+  // the grid never leaves a lonely item on a second row — drop "Tipo" (already
+  // shown in the eyebrow) once beds/baths/superficies fill the row.
   const stats: { value: string; label: string }[] = [
     ...(p.bedrooms != null
       ? [{ value: String(p.bedrooms), label: "Dormitorios" }]
@@ -60,9 +62,15 @@ export default async function PropertyDetail({
     ...(p.bathrooms != null
       ? [{ value: String(p.bathrooms), label: "Baños" }]
       : []),
-    { value: p.area.toLocaleString("es-AR"), label: "m² totales" },
-    { value: TYPE_LABELS[p.type], label: "Tipo" },
+    ...(p.coveredArea != null
+      ? [{ value: p.coveredArea.toLocaleString("es-AR"), label: "m² cubiertos" }]
+      : []),
+    {
+      value: p.area.toLocaleString("es-AR"),
+      label: p.coveredArea != null ? "m² terreno" : "m² totales",
+    },
   ];
+  if (stats.length < 4) stats.push({ value: TYPE_LABELS[p.type], label: "Tipo" });
 
   const features = [...p.services, ...(p.amenities ?? [])];
 

@@ -52,6 +52,9 @@ export default function PropertyForm({ property }: { property?: Property }) {
     property?.coords ? `${property.coords[0]}, ${property.coords[1]}` : ""
   );
   const [areaValue, setAreaValue] = useState<number | undefined>(property?.area);
+  const [coveredValue, setCoveredValue] = useState<number | undefined>(
+    property?.coveredArea
+  );
   const [geoState, setGeoState] = useState<{
     loading: boolean;
     label?: string;
@@ -143,8 +146,8 @@ export default function PropertyForm({ property }: { property?: Property }) {
               />
             </Field>
           </div>
-          <div className="grid gap-5 sm:grid-cols-4">
-            <Field label="Superficie (m²)">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Sup. del terreno (m²)">
               <input
                 name="area"
                 type="number"
@@ -157,8 +160,26 @@ export default function PropertyForm({ property }: { property?: Property }) {
                   )
                 }
                 className="admin-input"
+                placeholder="Ej: 300"
               />
             </Field>
+            <Field label="Sup. cubierta (m²)">
+              <input
+                name="coveredArea"
+                type="number"
+                min="0"
+                value={coveredValue ?? ""}
+                onChange={(e) =>
+                  setCoveredValue(
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
+                className="admin-input"
+                placeholder="Opcional — Ej: 180"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-3">
             <Field label="Dormitorios">
               <input
                 name="bedrooms"

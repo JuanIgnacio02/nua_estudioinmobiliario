@@ -16,7 +16,8 @@ export type Property = {
   location: string; // dirección legible
   zone: string; // barrio / localidad para filtro
   city: string;
-  area: number; // m2
+  area: number; // m2 — superficie del terreno / total del lote
+  coveredArea?: number; // m2 — superficie cubierta (construida)
   bedrooms?: number;
   bathrooms?: number;
   services: string[];
@@ -99,6 +100,7 @@ export const seedProperties: Property[] = [
     zone: "Fincas del Diamante",
     city: "San Rafael",
     area: 1303,
+    coveredArea: 185,
     bedrooms: 2,
     bathrooms: 2,
     services: ["Luz", "Agua"],
@@ -148,6 +150,7 @@ export const seedProperties: Property[] = [
     zone: "Barrio Garbín",
     city: "San Rafael",
     area: 778,
+    coveredArea: 320,
     bedrooms: 4,
     bathrooms: 4,
     services: ["Luz", "Agua", "Gas"],
@@ -174,6 +177,7 @@ export const seedProperties: Property[] = [
     zone: "Barrio SAT",
     city: "San Rafael",
     area: 298,
+    coveredArea: 260,
     bedrooms: 4,
     bathrooms: 3,
     services: ["Luz", "Agua", "Gas"],

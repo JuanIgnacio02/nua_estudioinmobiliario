@@ -83,8 +83,8 @@ export default function Hero() {
         className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 md:pb-24"
       >
         <p
-          className="text-eyebrow mb-6 text-mint-100/80 opacity-0 [animation:fadeIn_1s_0.6s_forwards]"
-          style={{ animation: "heroEyebrow 1s 0.5s forwards" }}
+          className="text-eyebrow mb-6 text-mint-100/80"
+          style={{ animation: "heroEyebrow 1s 0.5s forwards", opacity: 0 }}
         >
           San Rafael · Mendoza · Argentina
         </p>
@@ -112,7 +112,7 @@ export default function Hero() {
             </span>
           </Link>
           <Link
-            href="/#nosotras"
+            href="/nosotras"
             className="inline-flex items-center gap-3 rounded-full border border-mint-100/40 px-7 py-3.5 text-sm text-mint-50 transition-colors hover:bg-mint-100/10"
           >
             Conocer más

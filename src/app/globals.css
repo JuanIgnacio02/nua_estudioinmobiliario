@@ -234,6 +234,11 @@
 .leaflet-container {
   font-family: var(--font-sans);
   background: #ebefe1;
+  /* Encerrá los z-index internos de Leaflet (panes/controles llegan a 1000) en
+     un contexto de apilado propio, para que no se cuelen por encima del menú
+     lateral fijo (overlay z-40) en mobile. */
+  position: relative;
+  z-index: 0;
 }
 .leaflet-popup-content-wrapper {
   border-radius: 16px;

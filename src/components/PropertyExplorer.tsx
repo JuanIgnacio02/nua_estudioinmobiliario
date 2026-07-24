@@ -64,8 +64,8 @@ export default function PropertyExplorer({
   return (
     <div className="mx-auto max-w-7xl px-6 md:px-10">
       {/* Filter bar */}
-      <div className="sticky top-24 z-30 rounded-3xl border border-moss-600/10 bg-bone/80 p-4 backdrop-blur-xl md:p-5">
-        <div className="flex flex-wrap items-end gap-4">
+      <div className="sticky top-20 z-30 rounded-3xl border border-moss-600/10 bg-bone/80 p-4 backdrop-blur-xl md:top-24 md:p-5">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end sm:gap-4">
           <Select
             label="Operación"
             value={operation}
@@ -104,7 +104,7 @@ export default function PropertyExplorer({
               ["area-desc", "Superficie ↓"],
             ]}
           />
-          <div className="ml-auto flex items-center gap-4 pb-1">
+          <div className="col-span-2 flex items-center gap-4 pb-1 sm:col-span-1 sm:ml-auto">
             <span className="text-sm text-ink-soft/70">
               {results.length}{" "}
               {results.length === 1 ? "propiedad" : "propiedades"}
@@ -168,7 +168,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="cursor-pointer rounded-full border border-moss-600/15 bg-bone px-4 py-2.5 text-sm text-ink outline-none transition-colors hover:border-moss-600/40 focus:border-moss-600"
+        className="w-full cursor-pointer rounded-full border border-moss-600/15 bg-bone px-4 py-2.5 text-sm text-ink outline-none transition-colors hover:border-moss-600/40 focus:border-moss-600 sm:w-auto"
       >
         {options.map(([v, l]) => (
           <option key={v} value={v}>

@@ -191,7 +191,7 @@ export default function Navbar() {
                   data-menu-item
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className="group flex items-baseline gap-4 py-1.5 font-display text-[13vw] leading-[1.02] tracking-tight text-moss-700 transition-colors hover:text-moss-900 md:text-[7.5vw] lg:text-[6vw]"
+                  className="group flex items-baseline gap-4 py-1.5 font-display text-[11vw] leading-[1.02] tracking-tight text-moss-700 transition-colors hover:text-moss-900 md:text-[7.5vw] lg:text-[6vw]"
                 >
                   <span className="font-sans text-base text-sage-400">
                     0{i + 1}

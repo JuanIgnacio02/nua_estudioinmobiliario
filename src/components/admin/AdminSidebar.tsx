@@ -34,11 +34,11 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile bar */}
-      <div className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-moss-600/10 bg-bone/95 px-5 backdrop-blur-xl lg:hidden">
-        <Logo className="h-5 w-auto text-moss-600" />
+      <div className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-mint-100/10 bg-moss-900/95 px-5 backdrop-blur-xl lg:hidden">
+        <Logo className="h-5 w-auto text-mint-50" />
         <button
           onClick={() => setOpen((o) => !o)}
-          className="rounded-full border border-moss-600/15 px-4 py-1.5 text-sm text-moss-600"
+          className="rounded-full border border-mint-100/25 px-4 py-1.5 text-sm text-mint-50"
         >
           {open ? "Cerrar" : "Menú"}
         </button>
@@ -47,14 +47,14 @@ export default function AdminSidebar() {
       <aside
         className={`${
           open
-            ? "fixed inset-x-0 bottom-0 top-14 z-40 block overflow-y-auto bg-bone"
+            ? "fixed inset-x-0 bottom-0 top-14 z-40 block overflow-y-auto bg-moss-900"
             : "hidden"
-        } lg:static lg:top-0 lg:z-auto lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-visible lg:border-r lg:border-moss-600/10 lg:bg-mint-50/40`}
+        } text-mint-100 lg:static lg:top-0 lg:z-auto lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-visible lg:border-r lg:border-mint-100/10 lg:bg-moss-900`}
       >
         <div className="flex h-full flex-col p-5">
           <Link href="/admin" className="mb-10 hidden items-center gap-3 px-2 lg:flex">
-            <Logo className="h-6 w-auto text-moss-600" />
-            <span className="text-[11px] uppercase tracking-[0.2em] text-sage-500">
+            <Logo className="h-6 w-auto text-mint-50" />
+            <span className="text-[11px] uppercase tracking-[0.2em] text-celadon-300">
               Admin
             </span>
           </Link>
@@ -67,8 +67,8 @@ export default function AdminSidebar() {
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
                   isActive(item.href)
-                    ? "bg-moss-600 text-mint-50"
-                    : "text-ink-soft hover:bg-mint-100"
+                    ? "bg-mint-50 text-moss-700"
+                    : "text-mint-100/70 hover:bg-moss-700/50 hover:text-mint-50"
                 }`}
               >
                 <svg
@@ -92,7 +92,7 @@ export default function AdminSidebar() {
             <Link
               href="/"
               target="_blank"
-              className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition-colors hover:bg-mint-100"
+              className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-mint-100/70 transition-colors hover:bg-moss-700/50 hover:text-mint-50"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />
@@ -102,7 +102,7 @@ export default function AdminSidebar() {
             <form action={logout}>
               <button
                 type="submit"
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition-colors hover:bg-red-500/10 hover:text-red-700"
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-mint-100/70 transition-colors hover:bg-red-500/20 hover:text-red-200"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />

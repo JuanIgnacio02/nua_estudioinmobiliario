@@ -95,7 +95,13 @@ export default function PropertyCard({
             {formatPrice(property)}
           </p>
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-0.5 text-xs text-ink-soft/70">
-            <span>{formatArea(property.area)}</span>
+            {property.coveredArea != null && (
+              <span>{formatArea(property.coveredArea)} cub.</span>
+            )}
+            <span>
+              {formatArea(property.area)}
+              {property.coveredArea != null ? " terr." : ""}
+            </span>
             {property.bedrooms != null && (
               <span className="before:mr-3 before:text-sage-400 before:content-['·']">
                 {property.bedrooms} hab.

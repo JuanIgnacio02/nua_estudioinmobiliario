@@ -199,6 +199,7 @@ export async function savePropertyAction(formData: FormData) {
     zone: String(formData.get("zone") ?? "").trim() || "San Rafael",
     city: String(formData.get("city") ?? "").trim() || "San Rafael",
     area: num(formData.get("area")) ?? 0,
+    coveredArea: num(formData.get("coveredArea")),
     bedrooms: num(formData.get("bedrooms")),
     bathrooms: num(formData.get("bathrooms")),
     services: parseList(formData.get("services")),
