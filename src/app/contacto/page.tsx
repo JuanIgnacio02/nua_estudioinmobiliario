@@ -19,17 +19,17 @@ export default async function ContactoPage() {
     <>
       <Navbar />
       <main>
-        <header className="bg-moss-900 px-5 pb-16 pt-36 text-mint-100 md:px-10 md:pb-24 md:pt-48">
+        <header className="bg-celadon-400 px-5 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-48">
           <div className="mx-auto max-w-[1600px]">
-            <p className="text-eyebrow mb-6 flex items-center gap-3 text-celadon-300">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-celadon-300" />
+            <p className="text-eyebrow mb-6 flex items-center gap-3 text-moss-700">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-moss-700" />
               Contacto
             </p>
             <AnimatedHeading
               as="h1"
               immediate
               text="Estamos aquí para ayudarte"
-              className="text-display max-w-[16ch] font-display text-mint-50"
+              className="text-display max-w-[16ch] font-display text-moss-900"
             />
           </div>
         </header>

@@ -2,23 +2,23 @@
 
 /* ------------------------------------------------------------------ */
 /*  NÚA · Estudio Inmobiliario — Design System                         */
-/*  Paleta verde salvia/oliva extraída de la identidad original.       */
+/*  Escala verde oliva/sage anclada en el color de marca #acb297.      */
 /* ------------------------------------------------------------------ */
 
 @theme {
-  /* Brand greens */
-  --color-moss-900: #1f2c0c;
-  --color-moss-700: #2a3a10;
-  --color-moss-600: #344914;
-  --color-moss-500: #435d1c;
-  --color-sage-600: #566d33;
-  --color-sage-500: #6e8054;
-  --color-sage-400: #899873;
-  --color-celadon-400: #a7b98d;
-  --color-celadon-300: #b2c29b;
-  --color-mint-200: #d8e0c7;
-  --color-mint-100: #e3e9d7;
-  --color-mint-50: #eef2e6;
+  /* Brand greens — escala derivada del verde NÚA #acb297 (celadon-400) */
+  --color-moss-900: #24290f;
+  --color-moss-700: #333a17;
+  --color-moss-600: #455021;
+  --color-moss-500: #58642b;
+  --color-sage-600: #6f7d40;
+  --color-sage-500: #828e57;
+  --color-sage-400: #97a172;
+  --color-celadon-400: #acb297;
+  --color-celadon-300: #bdc2a8;
+  --color-mint-200: #d6dbc7;
+  --color-mint-100: #e2e6d5;
+  --color-mint-50: #ebefe1;
 
   /* Neutrals */
   --color-bone: #f7f6f1;
@@ -131,7 +131,7 @@
   width: 100%;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid rgba(52, 73, 20, 0.2);
+  border-bottom: 1px solid rgba(69, 80, 33, 0.2);
   padding: 0.6rem 0;
   font-size: 1rem;
   color: var(--color-ink);
@@ -149,7 +149,7 @@
 .admin-input {
   width: 100%;
   border-radius: 0.75rem;
-  border: 1px solid rgba(52, 73, 20, 0.18);
+  border: 1px solid rgba(69, 80, 33, 0.18);
   background: rgba(255, 255, 255, 0.7);
   padding: 0.6rem 0.85rem;
   font-size: 0.95rem;
@@ -162,7 +162,7 @@
 }
 .admin-input:focus {
   border-color: var(--color-moss-600);
-  box-shadow: 0 0 0 3px rgba(52, 73, 20, 0.08);
+  box-shadow: 0 0 0 3px rgba(69, 80, 33, 0.08);
 }
 
 /* ------------------------------------------------------------------ */
@@ -186,7 +186,7 @@
   font-weight: 600;
   padding: 5px 11px;
   border-radius: 999px;
-  box-shadow: 0 6px 16px -6px rgba(31, 44, 12, 0.6);
+  box-shadow: 0 6px 16px -6px rgba(36, 41, 15, 0.6);
   transition: transform 0.2s ease, background 0.2s ease;
 }
 .nua-pin:hover .nua-pin__pill {
@@ -199,7 +199,7 @@
 .nua-pin--active .nua-pin__pill {
   background: var(--color-moss-900);
   transform: translateX(-50%) translateY(-4px) scale(1.12);
-  box-shadow: 0 10px 24px -8px rgba(31, 44, 12, 0.75);
+  box-shadow: 0 10px 24px -8px rgba(36, 41, 15, 0.75);
 }
 .nua-pin--active .nua-pin__tip {
   background: var(--color-moss-900);
@@ -216,13 +216,13 @@
 }
 .leaflet-container {
   font-family: var(--font-sans);
-  background: #eef2e6;
+  background: #ebefe1;
 }
 .leaflet-popup-content-wrapper {
   border-radius: 16px;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 20px 45px -20px rgba(31, 44, 12, 0.5);
+  box-shadow: 0 20px 45px -20px rgba(36, 41, 15, 0.5);
 }
 .leaflet-popup-content {
   margin: 0;

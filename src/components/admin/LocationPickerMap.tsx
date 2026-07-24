@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 
 const pinIcon = L.divIcon({
   className: "nua-pick-pin",
-  html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#344914;transform:rotate(-45deg);border:2px solid #e3e9d7;box-shadow:0 4px 10px rgba(31,44,12,.5)"></span>`,
+  html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#455021;transform:rotate(-45deg);border:2px solid #e2e6d5;box-shadow:0 4px 10px rgba(36,41,15,.5)"></span>`,
   iconSize: [22, 22],
   iconAnchor: [11, 22],
 });

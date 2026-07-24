@@ -79,7 +79,7 @@ export default function MapExplorer({
                   onClick={() => setActive(p.slug)}
                   className={`group flex gap-4 rounded-2xl border p-3 text-left transition-all duration-300 ${
                     isActive
-                      ? "border-moss-600/30 bg-mint-100 shadow-[0_10px_30px_-18px_rgba(31,44,12,0.6)]"
+                      ? "border-moss-600/30 bg-mint-100 shadow-[0_10px_30px_-18px_rgba(36,41,15,0.6)]"
                       : "border-transparent bg-bone-dark/40 hover:bg-mint-100/60"
                   }`}
                 >
@@ -121,7 +121,7 @@ export default function MapExplorer({
           </div>
 
           {/* Map */}
-          <div className="order-1 h-[70vh] min-h-[460px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(31,44,12,0.35)] lg:order-2">
+          <div className="order-1 h-[70vh] min-h-[460px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(36,41,15,0.35)] lg:order-2">
             <PropertiesMap
               properties={list}
               activeSlug={active}

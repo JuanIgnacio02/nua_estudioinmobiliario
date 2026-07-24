@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef } from "react";
 import AnimatedHeading from "@/components/anim/AnimatedHeading";
 import Reveal from "@/components/anim/Reveal";
+import Logo from "@/components/Logo";
 import {
   gsap,
   useIsomorphicLayoutEffect,
@@ -53,26 +54,31 @@ export default function About({
   return (
     <section
       id="nosotras"
-      className="overflow-hidden bg-moss-900 pb-24 pt-28 text-mint-100 md:pb-32 md:pt-32"
+      className="relative overflow-hidden bg-celadon-400 pb-24 pt-28 text-moss-900 md:pb-32 md:pt-32"
     >
-      <div className="mx-auto max-w-[1600px] px-5 md:px-10">
+      {/* Decorative NÚA wordmark backdrop */}
+      <div className="pointer-events-none absolute -right-[12%] top-[6%] w-[70%] text-moss-900/[0.05] md:-right-[6%] md:w-[48%]">
+        <Logo className="h-auto w-full" />
+      </div>
+
+      <div className="relative mx-auto max-w-[1600px] px-5 md:px-10">
         {/* Header */}
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-eyebrow mb-6 text-celadon-300">Sobre nosotras</p>
+            <p className="text-eyebrow mb-6 text-moss-700">Sobre nosotras</p>
             <AnimatedHeading
               immediate
               delay={0.15}
               text="Tus socias de confianza"
-              className="font-display text-mint-50 text-[clamp(2.5rem,6vw,5.25rem)] leading-[0.95]"
+              className="font-display text-moss-900 text-[clamp(2.5rem,6vw,5.25rem)] leading-[0.95]"
             />
           </div>
-          <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-celadon-300/80 md:max-w-xs md:justify-end md:text-right">
+          <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-moss-700/80 md:max-w-xs md:justify-end md:text-right">
             {PILLARS.map((p, i) => (
               <span key={p}>
                 {p}
                 {i < PILLARS.length - 1 && (
-                  <span className="ml-3 text-sage-400">·</span>
+                  <span className="ml-3 text-moss-600">·</span>
                 )}
               </span>
             ))}
@@ -85,7 +91,7 @@ export default function About({
           <div className="lg:pt-4">
             <div
               ref={img}
-              className="relative aspect-[7/6] w-full overflow-hidden rounded-2xl ring-1 ring-mint-100/10"
+              className="relative aspect-[7/6] w-full overflow-hidden rounded-2xl ring-1 ring-moss-900/10"
             >
               <Image
                 src={about.teamImage}
@@ -95,9 +101,9 @@ export default function About({
                 quality={90}
                 className="object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-moss-900/40 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-celadon-400/50 via-transparent to-transparent" />
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-celadon-300/70">
+            <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-moss-700/70">
               <span>El equipo</span>
               <span>San Rafael, Mendoza</span>
             </div>
@@ -105,12 +111,12 @@ export default function About({
 
           {/* Text */}
           <div className="flex flex-col justify-center">
-            <Reveal className="max-w-xl space-y-6 text-xl leading-relaxed text-mint-100/85 md:text-2xl md:leading-relaxed">
+            <Reveal className="max-w-xl space-y-6 text-xl leading-relaxed text-moss-900/85 md:text-2xl md:leading-relaxed">
               {about.paragraphs.map((para, i) => (
                 <p
                   key={i}
                   className={
-                    i === 0 ? "" : "text-lg text-mint-100/65 md:text-xl"
+                    i === 0 ? "" : "text-lg text-moss-900/60 md:text-xl"
                   }
                 >
                   {para}
@@ -123,20 +129,20 @@ export default function About({
         {/* Values — editorial rule list */}
         <div
           data-values
-          className="mt-24 grid gap-px border-t border-mint-100/15 md:grid-cols-4"
+          className="mt-24 grid gap-px border-t border-moss-900/15 md:grid-cols-4"
         >
           {VALUES.map((v) => (
             <div
               key={v.n}
               data-value
-              className="group border-t border-mint-100/10 pt-6 md:border-t-0 md:pr-8"
+              className="group border-t border-moss-900/10 pt-6 md:border-t-0 md:pr-8"
             >
               <div className="flex items-baseline gap-3">
-                <span className="font-display text-sm text-sage-400">{v.n}</span>
-                <span className="h-px flex-1 bg-mint-100/15 transition-colors group-hover:bg-celadon-300/50" />
+                <span className="font-display text-sm text-moss-600">{v.n}</span>
+                <span className="h-px flex-1 bg-moss-900/15 transition-colors group-hover:bg-moss-700/50" />
               </div>
-              <h3 className="mt-5 font-display text-3xl text-mint-50">{v.t}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-mint-100/60">
+              <h3 className="mt-5 font-display text-3xl text-moss-900">{v.t}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-moss-900/60">
                 {v.d}
               </p>
             </div>

@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import PropertyExplorer from "@/components/PropertyExplorer";
 import MapExplorer from "@/components/MapExplorer";
 import AnimatedHeading from "@/components/anim/AnimatedHeading";
+import Logo from "@/components/Logo";
 import { TYPE_LABELS, getZones, type PropertyType } from "@/lib/properties";
 import { getStore } from "@/lib/store";
 
@@ -32,18 +33,22 @@ export default async function PropiedadesPage({
       <Navbar />
       <main className="pb-28">
         {/* Page header */}
-        <header className="bg-moss-900 px-6 pb-16 pt-36 text-mint-100 md:px-10 md:pb-24 md:pt-44">
-          <div className="mx-auto max-w-7xl">
-            <p className="text-eyebrow mb-6 text-celadon-300">
+        <header className="relative overflow-hidden bg-celadon-400 px-6 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-44">
+          {/* Decorative NÚA wordmark backdrop */}
+          <div className="pointer-events-none absolute -bottom-[35%] -right-[4%] w-[55%] text-moss-900/[0.05] md:w-[40%]">
+            <Logo className="h-auto w-full" />
+          </div>
+          <div className="relative mx-auto max-w-7xl">
+            <p className="text-eyebrow mb-6 text-moss-700">
               Catálogo · San Rafael y Mendoza
             </p>
             <AnimatedHeading
               as="h1"
               immediate
               text="Encontrá tu propiedad"
-              className="text-display font-display text-mint-50"
+              className="text-display font-display text-moss-900"
             />
-            <p className="mt-8 max-w-xl text-lg text-mint-100/75">
+            <p className="mt-8 max-w-xl text-lg text-moss-900/70">
               Búsqueda inteligente con filtros por operación, tipo, zona y
               precio. Ordená por destacadas, precio o superficie.
             </p>
