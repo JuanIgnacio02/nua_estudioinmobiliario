@@ -12,20 +12,39 @@ export default function ImageManager({
   onChange: (v: string[]) => void;
 }) {
   const [uploading, setUploading] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
+    setError(null);
     setUploading(files.length);
     const added: string[] = [];
+    let failed = 0;
+    let lastError = "";
     for (const file of files) {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await uploadImageAction(fd);
-      if (res.ok && res.image) added.push(res.image);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await uploadImageAction(fd);
+        if (res.ok && res.image) added.push(res.image);
+        else {
+          failed++;
+          lastError = res.error ?? "Error desconocido";
+        }
+      } catch (err) {
+        failed++;
+        lastError =
+          err instanceof Error ? err.message : "No se pudo subir la imagen";
+      }
       setUploading((n) => n - 1);
     }
-    onChange([...value, ...added]);
+    if (added.length) onChange([...value, ...added]);
+    if (failed) {
+      setError(
+        `${failed} foto(s) no se subieron: ${lastError}. Probá con una imagen más liviana.`
+      );
+    }
     e.target.value = "";
   };
 
@@ -140,6 +159,11 @@ export default function ImageManager({
       <p className="mt-2 text-xs text-ink-soft/50">
         Podés subir varias a la vez. Se comprimen y optimizan solas.
       </p>
+      {error && (
+        <p className="mt-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

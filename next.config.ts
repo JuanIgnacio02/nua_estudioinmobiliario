@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
+  experimental: {
+    // Allow uploading real (multi-MB) photos via Server Actions.
+    serverActions: { bodySizeLimit: "20mb" },
+  },
 };
 
 export default nextConfig;
