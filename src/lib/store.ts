@@ -7,11 +7,11 @@ import {
   type Property,
   type SiteSettings,
 } from "./properties";
+import { supabase, STORE_TABLE, STORE_ID } from "./supabase";
 
 /**
- * Local file-backed store (dev / Node hosting). Isolated on purpose: to deploy
- * on Vercel/serverless, swap the read/write internals for Supabase without
- * touching the rest of the app. See memory: cloudinary-image-pipeline-plan.
+ * Site store. Uses Supabase (single JSONB row) when configured — the
+ * production driver for Vercel — and falls back to a local JSON file for dev.
  */
 
 export type Store = {
@@ -22,39 +22,82 @@ export type Store = {
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "store.json");
 
-async function ensureStore(): Promise<Store> {
+function normalize(partial: Partial<Store> | null | undefined): Store {
+  return {
+    properties: partial?.properties ?? seedProperties,
+    settings: { ...defaultSettings, ...partial?.settings },
+  };
+}
+
+/* ------------------------------ file driver ------------------------------ */
+
+async function fileGet(): Promise<Store> {
   try {
     const raw = await fs.readFile(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as Partial<Store>;
-    return {
-      properties: parsed.properties ?? seedProperties,
-      settings: { ...defaultSettings, ...parsed.settings },
-    };
+    return normalize(JSON.parse(raw) as Partial<Store>);
   } catch {
-    const seeded: Store = {
-      properties: seedProperties,
-      settings: defaultSettings,
-    };
-    // Try to persist the seed. On a read-only FS (Vercel serverless) this
-    // fails silently and we serve the in-memory seed — the public site keeps
-    // working. Real persistence there comes from the Supabase driver.
+    const seeded = normalize(null);
     try {
       await fs.mkdir(DATA_DIR, { recursive: true });
       await fs.writeFile(STORE_PATH, JSON.stringify(seeded, null, 2), "utf8");
     } catch {
-      /* read-only filesystem — ignore */
+      /* read-only fs — serve in-memory seed */
     }
     return seeded;
   }
 }
 
+async function fileSave(store: Store): Promise<void> {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+}
+
+/* ---------------------------- supabase driver ---------------------------- */
+
+async function supaGet(): Promise<Store> {
+  const sb = supabase()!;
+  const { data, error } = await sb
+    .from(STORE_TABLE)
+    .select("data")
+    .eq("id", STORE_ID)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data) {
+    // First run: seed the single row.
+    const seeded = normalize(null);
+    await sb.from(STORE_TABLE).upsert({ id: STORE_ID, data: seeded });
+    return seeded;
+  }
+  return normalize(data.data as Partial<Store>);
+}
+
+async function supaSave(store: Store): Promise<void> {
+  const sb = supabase()!;
+  const { error } = await sb
+    .from(STORE_TABLE)
+    .upsert({ id: STORE_ID, data: store, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+/* ------------------------------- public API ------------------------------ */
+
 export async function getStore(): Promise<Store> {
-  return ensureStore();
+  if (supabase()) {
+    try {
+      return await supaGet();
+    } catch (e) {
+      console.error("[store] Supabase read failed, using seed:", e);
+      return normalize(null);
+    }
+  }
+  return fileGet();
 }
 
 export async function saveStore(store: Store): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  if (supabase()) return supaSave(store);
+  return fileSave(store);
 }
 
 export async function getProperties(): Promise<Property[]> {

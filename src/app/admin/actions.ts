@@ -11,6 +11,7 @@ import {
   deleteProperty,
   saveSettings,
 } from "@/lib/store";
+import { cloudinaryEnabled, uploadToCloudinary } from "@/lib/cloudinary";
 import type {
   Property,
   Operation,
@@ -52,18 +53,28 @@ export async function uploadImageAction(
 
     const buf = Buffer.from(await file.arrayBuffer());
     const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "propiedad";
+
+    // Cloudinary path (production): compress to WebP and upload. Delivery does
+    // auto format/quality; heroImage() applies the sharpened hero transform.
+    if (cloudinaryEnabled()) {
+      const optimized = await sharp(buf)
+        .rotate()
+        .resize({ width: 2600, height: 2600, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 80, effort: 5 })
+        .toBuffer();
+      const url = await uploadToCloudinary(optimized, "nua/properties");
+      if (url) return { ok: true, image: url };
+    }
+
+    // Local fallback (dev): write compressed + sharpened variants to /public.
     const name = `${base}-${Date.now()}`;
     await fs.mkdir(IMG_DIR, { recursive: true });
-
-    // Standard compressed WebP.
     const std = await sharp(buf)
       .rotate()
       .resize({ width: 1800, height: 1800, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 72, effort: 5 })
       .toBuffer();
     await fs.writeFile(path.join(IMG_DIR, `${name}.webp`), std);
-
-    // Sharpened larger variant for full-bleed heroes.
     const meta = await sharp(buf).metadata();
     const targetW = Math.min((meta.width ?? 1600) * 2, 2600);
     const lg = await sharp(buf)
@@ -73,7 +84,6 @@ export async function uploadImageAction(
       .webp({ quality: 82, effort: 5 })
       .toBuffer();
     await fs.writeFile(path.join(IMG_DIR, `${name}-lg.webp`), lg);
-
     return { ok: true, image: `/images/properties/${name}.webp` };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al subir" };
@@ -242,9 +252,6 @@ export async function uploadGenericImageAction(
     if (!file || file.size === 0) return { ok: false, error: "Sin archivo" };
     const buf = Buffer.from(await file.arrayBuffer());
     const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "imagen";
-    const name = `${base}-${Date.now()}`;
-    const dir = path.join(process.cwd(), "public", "images");
-    await fs.mkdir(dir, { recursive: true });
     const meta = await sharp(buf).metadata();
     const targetW = Math.min((meta.width ?? 1600) * 1.6, 2200);
     const out = await sharp(buf)
@@ -253,6 +260,15 @@ export async function uploadGenericImageAction(
       .sharpen({ sigma: 0.8, m1: 0.5, m2: 2 })
       .webp({ quality: 86, effort: 5 })
       .toBuffer();
+
+    if (cloudinaryEnabled()) {
+      const url = await uploadToCloudinary(out, "nua/site");
+      if (url) return { ok: true, image: url };
+    }
+
+    const name = `${base}-${Date.now()}`;
+    const dir = path.join(process.cwd(), "public", "images");
+    await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(path.join(dir, `${name}-lg.webp`), out);
     return { ok: true, image: `/images/${name}-lg.webp` };
   } catch (e) {

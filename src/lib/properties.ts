@@ -231,8 +231,16 @@ export const defaultSettings: SiteSettings = {
 
 /* --------------------------- pure helpers --------------------------- */
 
-/** High-resolution (upscaled + sharpened) variant for full-bleed heroes. */
+/** High-resolution (sharpened) variant for full-bleed heroes. */
 export function heroImage(p: Pick<Property, "image">) {
+  // Cloudinary: inject a wide + sharpen transform right after /upload/.
+  if (p.image.includes("res.cloudinary.com")) {
+    return p.image.replace(
+      "/upload/",
+      "/upload/w_2600,c_limit,e_sharpen:60,f_auto,q_auto/"
+    );
+  }
+  // Local files: use the pre-generated -lg variant.
   return p.image.replace(/\.webp$/i, "-lg.webp");
 }
 
