@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -61,9 +61,12 @@ function FlyController({
     return () => clearTimeout(t);
   }, [map, initialPoints]);
 
-  // Fly to the active property and open its popup.
+  // Fly to the active property and open its popup; close it when none.
   useEffect(() => {
-    if (!activeSlug) return;
+    if (!activeSlug) {
+      map.closePopup();
+      return;
+    }
     const pin = pins.find((p) => p.property.slug === activeSlug);
     if (!pin) return;
     map.flyTo(pin.pos, 15, { duration: 1.1 });
@@ -74,6 +77,33 @@ function FlyController({
     }
   }, [activeSlug, map, pins, markerRefs]);
 
+  return null;
+}
+
+// Zoom con Ctrl/⌘ + rueda; sin Ctrl el scroll mueve la página (con aviso).
+function WheelZoom({ onHint }: { onHint: (show: boolean) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        onHint(false);
+        const target = map.getZoom() + (e.deltaY > 0 ? -1 : 1);
+        map.setZoomAround(map.mouseEventToLatLng(e), target);
+      } else {
+        onHint(true);
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => onHint(false), 1300);
+      }
+    };
+    container.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      container.removeEventListener("wheel", onWheel);
+      if (timer) clearTimeout(timer);
+    };
+  }, [map, onHint]);
   return null;
 }
 
@@ -116,8 +146,10 @@ export default function PropertiesMap({
   );
 
   const center = pins[0]?.pos ?? [-34.6176, -68.3319];
+  const [hint, setHint] = useState(false);
 
   return (
+    <div className="relative h-full w-full">
     <MapContainer
       center={center}
       zoom={focusSlug ? 14 : zoom}
@@ -129,6 +161,7 @@ export default function PropertiesMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
       />
+      <WheelZoom onHint={setHint} />
       <FlyController
         activeSlug={activeSlug}
         pins={pins}
@@ -146,7 +179,6 @@ export default function PropertiesMap({
           }}
           eventHandlers={{
             click: () => onSelect?.(property.slug),
-            popupclose: () => onSelect?.(null),
           }}
         >
           <Popup>
@@ -167,5 +199,17 @@ export default function PropertiesMap({
         </Marker>
       ))}
     </MapContainer>
+
+      {/* Aviso: cómo hacer zoom */}
+      <div
+        className={`pointer-events-none absolute inset-0 z-[1000] flex items-center justify-center transition-opacity duration-300 ${
+          hint ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <span className="rounded-full bg-ink/80 px-5 py-2.5 text-sm font-medium text-bone shadow-lg backdrop-blur">
+          Usá Ctrl + rueda para hacer zoom
+        </span>
+      </div>
+    </div>
   );
 }

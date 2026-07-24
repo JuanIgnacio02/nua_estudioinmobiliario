@@ -25,22 +25,48 @@ export default function MapExplorer({
 }: {
   properties: Property[];
 }) {
-  const [active, setActive] = useState<string | null>(null);
+  // `hovered` = preview temporal (se cierra al sacar el mouse);
+  // `pinned` = fijado con clic (queda abierto). El activo es el hover si lo hay.
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);
+  const active = hovered ?? pinned;
+  const [cat, setCat] = useState<"todos" | "lote" | "propiedad">("todos");
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  const list = useMemo(
+  const base = useMemo(
     () => properties.filter((p) => p.operation === "venta" && p.coords),
     [properties]
   );
 
-  // Keep the active list item in view when selected from the map.
+  const counts = useMemo(() => {
+    const lote = base.filter((p) => p.type === "terreno").length;
+    return { todos: base.length, lote, propiedad: base.length - lote };
+  }, [base]);
+
+  const list = useMemo(() => {
+    if (cat === "lote") return base.filter((p) => p.type === "terreno");
+    if (cat === "propiedad") return base.filter((p) => p.type !== "terreno");
+    return base;
+  }, [base, cat]);
+
+  // Scroll the list to the item pinned from the map (not on mere hover).
   useEffect(() => {
-    if (!active) return;
-    itemRefs.current[active]?.scrollIntoView({
+    if (!pinned) return;
+    itemRefs.current[pinned]?.scrollIntoView({
       behavior: "smooth",
       block: "nearest",
     });
-  }, [active]);
+  }, [pinned]);
+
+  // Ignore an active selection that the current filter hides.
+  const activeInList =
+    active && list.some((p) => p.slug === active) ? active : null;
+
+  const FILTERS: { key: typeof cat; label: string }[] = [
+    { key: "todos", label: "Ambos" },
+    { key: "lote", label: "Lotes" },
+    { key: "propiedad", label: "Propiedades" },
+  ];
 
   return (
     <section className="bg-bone py-20 md:py-28">
@@ -58,9 +84,39 @@ export default function MapExplorer({
           </div>
           <p className="max-w-sm text-sm text-ink-soft/70 md:text-right">
             Pasá por la lista o tocá un marcador: el mapa vuela hasta la
-            propiedad. {list.length} propiedades en venta en San Rafael y la
-            región.
+            propiedad. {list.length}{" "}
+            {cat === "lote"
+              ? "lotes"
+              : cat === "propiedad"
+                ? "propiedades"
+                : "publicaciones"}{" "}
+            en venta en San Rafael y la región.
           </p>
+        </div>
+
+        {/* Filtro por tipo — solo pines en el mapa */}
+        <div className="mb-8 flex flex-wrap gap-2">
+          {FILTERS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setCat(key)}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                cat === key
+                  ? "border-moss-600 bg-moss-600 text-mint-100"
+                  : "border-moss-600/20 text-ink-soft/80 hover:bg-mint-100"
+              }`}
+            >
+              {label}
+              <span
+                className={`ml-2 text-xs ${
+                  cat === key ? "text-mint-100/70" : "text-ink-soft/50"
+                }`}
+              >
+                {counts[key]}
+              </span>
+            </button>
+          ))}
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
@@ -74,9 +130,13 @@ export default function MapExplorer({
                   ref={(el) => {
                     itemRefs.current[p.slug] = el;
                   }}
-                  onMouseEnter={() => setActive(p.slug)}
-                  onFocus={() => setActive(p.slug)}
-                  onClick={() => setActive(p.slug)}
+                  onMouseEnter={() => setHovered(p.slug)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(p.slug)}
+                  onBlur={() => setHovered(null)}
+                  onClick={() =>
+                    setPinned((prev) => (prev === p.slug ? null : p.slug))
+                  }
                   className={`group flex gap-4 rounded-2xl border p-3 text-left transition-all duration-300 ${
                     isActive
                       ? "border-moss-600/30 bg-mint-100 shadow-[0_10px_30px_-18px_rgba(36,41,15,0.6)]"
@@ -124,8 +184,11 @@ export default function MapExplorer({
           <div className="order-1 h-[70vh] min-h-[460px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(36,41,15,0.35)] lg:order-2">
             <PropertiesMap
               properties={list}
-              activeSlug={active}
-              onSelect={setActive}
+              activeSlug={activeInList}
+              onSelect={(slug) => {
+                setHovered(null);
+                setPinned(slug);
+              }}
             />
           </div>
         </div>

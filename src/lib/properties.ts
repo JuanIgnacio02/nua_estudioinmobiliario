@@ -28,6 +28,8 @@ export type Property = {
   highlights?: string[];
   /** [lat, lng] — geolocalizadas desde la dirección. */
   coords?: [number, number];
+  /** Contorno del lote dibujado en el admin: lista de vértices [lat, lng]. */
+  boundary?: [number, number][];
 };
 
 /** Galería de una propiedad (retrocompatible con `image` único). */

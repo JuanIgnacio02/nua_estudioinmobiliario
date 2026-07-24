@@ -146,6 +146,29 @@ function num(raw: FormDataEntryValue | null): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** Parse el contorno del lote: JSON con lista de vértices [lat, lng]. */
+function parseBoundary(
+  raw: FormDataEntryValue | null
+): [number, number][] | undefined {
+  if (!raw) return undefined;
+  try {
+    const arr = JSON.parse(String(raw));
+    if (!Array.isArray(arr)) return undefined;
+    const pts = arr
+      .filter(
+        (p): p is [number, number] =>
+          Array.isArray(p) &&
+          p.length === 2 &&
+          Number.isFinite(p[0]) &&
+          Number.isFinite(p[1])
+      )
+      .map(([a, b]) => [a, b] as [number, number]);
+    return pts.length >= 3 ? pts : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function savePropertyAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
@@ -187,6 +210,7 @@ export async function savePropertyAction(formData: FormData) {
     description: String(formData.get("description") ?? "").trim(),
     coords:
       lat != null && lng != null ? [lat, lng] : undefined,
+    boundary: parseBoundary(formData.get("boundary")),
   };
 
   // Gallery: first image is the main/cover. Keep `image` in sync for compat.

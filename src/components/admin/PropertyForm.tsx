@@ -34,6 +34,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
   const [coords, setCoords] = useState<[number, number] | undefined>(
     property?.coords
   );
+  const [areaValue, setAreaValue] = useState<number | undefined>(property?.area);
   const [geoState, setGeoState] = useState<{
     loading: boolean;
     label?: string;
@@ -126,7 +127,12 @@ export default function PropertyForm({ property }: { property?: Property }) {
                 type="number"
                 min="0"
                 required
-                defaultValue={property?.area}
+                value={areaValue ?? ""}
+                onChange={(e) =>
+                  setAreaValue(
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
                 className="admin-input"
               />
             </Field>
@@ -218,6 +224,55 @@ export default function PropertyForm({ property }: { property?: Property }) {
         <div className="mt-4">
           <LocationPicker coords={coords} onChange={setCoords} />
         </div>
+
+        {/* Coordenadas manuales — alternativa al geocoding / clic en el mapa */}
+        <div className="mt-4 grid gap-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <Field label="Latitud">
+            <input
+              type="number"
+              step="any"
+              inputMode="decimal"
+              value={coords?.[0] ?? ""}
+              onChange={(e) =>
+                setCoords([
+                  e.target.value === "" ? 0 : Number(e.target.value),
+                  coords?.[1] ?? 0,
+                ])
+              }
+              className="admin-input"
+              placeholder="-34.6176"
+            />
+          </Field>
+          <Field label="Longitud">
+            <input
+              type="number"
+              step="any"
+              inputMode="decimal"
+              value={coords?.[1] ?? ""}
+              onChange={(e) =>
+                setCoords([
+                  coords?.[0] ?? 0,
+                  e.target.value === "" ? 0 : Number(e.target.value),
+                ])
+              }
+              className="admin-input"
+              placeholder="-68.3319"
+            />
+          </Field>
+          {coords && (
+            <button
+              type="button"
+              onClick={() => setCoords(undefined)}
+              className="mb-0.5 rounded-full border border-moss-600/20 px-4 py-2.5 text-sm text-ink-soft/70 transition-colors hover:bg-mint-100"
+            >
+              Quitar pin
+            </button>
+          )}
+        </div>
+        <p className="mt-2 text-xs text-ink-soft/60">
+          Podés pegar las coordenadas a mano (ej. desde Google Maps) o marcar el
+          punto en el mapa de arriba — se sincronizan.
+        </p>
       </section>
 
       {/* Description */}
