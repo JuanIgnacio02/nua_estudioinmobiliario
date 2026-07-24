@@ -181,14 +181,18 @@ export async function savePropertyAction(formData: FormData) {
     services: parseList(formData.get("services")),
     amenities: parseList(formData.get("amenities")),
     highlights: parseList(formData.get("highlights")),
-    image:
-      String(formData.get("image") ?? "").trim() ||
-      "/images/properties/terreno-25demayo.webp",
+    image: "",
+    images: [],
     featured: formData.get("featured") === "on",
     description: String(formData.get("description") ?? "").trim(),
     coords:
       lat != null && lng != null ? [lat, lng] : undefined,
   };
+
+  // Gallery: first image is the main/cover. Keep `image` in sync for compat.
+  const images = parseList(formData.get("images"));
+  property.images = images;
+  property.image = images[0] ?? "/images/properties/terreno-25demayo.webp";
 
   await upsertProperty(property);
   revalidateAll();

@@ -1,29 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   TYPE_LABELS,
   OPERATION_LABELS,
+  propertyImages,
   type Property,
   type Operation,
   type PropertyType,
 } from "@/lib/properties";
-import {
-  savePropertyAction,
-  uploadImageAction,
-  geocodeAction,
-} from "@/app/admin/actions";
+import { savePropertyAction, geocodeAction } from "@/app/admin/actions";
 import TagInput from "./TagInput";
+import ImageManager from "./ImageManager";
 
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
 
 export default function PropertyForm({ property }: { property?: Property }) {
   const isEdit = !!property;
-  const [image, setImage] = useState(property?.image ?? "");
-  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState<string[]>(
+    property ? propertyImages(property) : []
+  );
   const [services, setServices] = useState<string[]>(property?.services ?? []);
   const [amenities, setAmenities] = useState<string[]>(
     property?.amenities ?? []
@@ -41,18 +39,6 @@ export default function PropertyForm({ property }: { property?: Property }) {
     error?: string;
   }>({ loading: false });
 
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await uploadImageAction(fd);
-    setUploading(false);
-    if (res.ok && res.image) setImage(res.image);
-    else alert(res.error ?? "Error al subir la imagen");
-  };
-
   const onGeocode = async () => {
     if (!location.trim()) return;
     setGeoState({ loading: true });
@@ -68,7 +54,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
   return (
     <form action={savePropertyAction} className="space-y-10">
       {isEdit && <input type="hidden" name="slug" value={property.slug} />}
-      <input type="hidden" name="image" value={image} />
+      <input type="hidden" name="images" value={JSON.stringify(images)} />
       <input type="hidden" name="services" value={JSON.stringify(services)} />
       <input type="hidden" name="amenities" value={JSON.stringify(amenities)} />
       <input type="hidden" name="highlights" value={JSON.stringify(highlights)} />
@@ -79,42 +65,11 @@ export default function PropertyForm({ property }: { property?: Property }) {
         </>
       )}
 
-      {/* Image + basics */}
-      <section className="grid gap-8 lg:grid-cols-[280px_1fr]">
-        {/* Image uploader */}
-        <div>
-          <span className="text-eyebrow text-sage-500">Foto principal</span>
-          <label className="mt-2 flex aspect-[4/5] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-moss-600/25 bg-mint-50/40 text-center transition-colors hover:bg-mint-100/50">
-            {image ? (
-              <span className="relative h-full w-full">
-                <Image
-                  src={image}
-                  alt="Vista previa"
-                  fill
-                  className="object-cover"
-                  sizes="280px"
-                />
-              </span>
-            ) : (
-              <span className="px-4 text-sm text-ink-soft/60">
-                {uploading ? "Comprimiendo…" : "Subí una foto (se comprime sola)"}
-              </span>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onUpload}
-              className="hidden"
-            />
-          </label>
-          {image && (
-            <p className="mt-2 text-center text-xs text-sage-500">
-              {uploading ? "Procesando…" : "Clic para cambiar"}
-            </p>
-          )}
-        </div>
+      {/* Gallery */}
+      <ImageManager value={images} onChange={setImages} />
 
-        {/* Basics */}
+      {/* Basics */}
+      <section>
         <div className="space-y-5">
           <Field label="Título">
             <input
@@ -297,7 +252,6 @@ export default function PropertyForm({ property }: { property?: Property }) {
       <div className="flex items-center gap-4 border-t border-moss-600/10 pt-6">
         <button
           type="submit"
-          disabled={uploading}
           className="rounded-full bg-moss-600 px-8 py-3.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
         >
           {isEdit ? "Guardar cambios" : "Crear propiedad"}

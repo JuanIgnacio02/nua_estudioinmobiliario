@@ -21,13 +21,20 @@ export type Property = {
   bathrooms?: number;
   services: string[];
   amenities?: string[];
-  image: string;
+  image: string; // portada (= images[0])
+  images?: string[]; // galería completa; la primera es la principal
   featured: boolean;
   description: string;
   highlights?: string[];
   /** [lat, lng] — geolocalizadas desde la dirección. */
   coords?: [number, number];
 };
+
+/** Galería de una propiedad (retrocompatible con `image` único). */
+export function propertyImages(p: Pick<Property, "image" | "images">): string[] {
+  if (p.images && p.images.length) return p.images;
+  return p.image ? [p.image] : [];
+}
 
 export type SiteSettings = {
   contact: { email: string; phone: string; phoneHref: string };

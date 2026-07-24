@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -7,11 +6,12 @@ import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyMapEmbed from "@/components/PropertyMapEmbed";
 import PropertyInquiry from "@/components/PropertyInquiry";
+import PropertyGallery from "@/components/PropertyGallery";
 import {
   findProperty,
   getRelated,
   formatPrice,
-  heroImage,
+  propertyImages,
   TYPE_LABELS,
   OPERATION_LABELS,
 } from "@/lib/properties";
@@ -88,27 +88,12 @@ export default async function PropertyDetail({
         {/* Gallery hero */}
         <section className="px-5 pt-6 md:px-10">
           <div className="mx-auto max-w-[1600px]">
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bone-dark md:aspect-[16/8]">
-              <Image
-                src={heroImage(p)}
-                alt={p.title}
-                fill
-                priority
-                quality={90}
-                sizes="(max-width: 1600px) 100vw, 1600px"
-                className="object-cover"
-              />
-              <div className="absolute left-5 top-5 flex gap-2">
-                <span className="rounded-full bg-moss-900/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-mint-50 backdrop-blur-sm">
-                  {OPERATION_LABELS[p.operation]}
-                </span>
-                {p.featured && (
-                  <span className="rounded-full bg-mint-50/90 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-moss-700">
-                    Destacado
-                  </span>
-                )}
-              </div>
-            </div>
+            <PropertyGallery
+              images={propertyImages(p)}
+              alt={p.title}
+              operationLabel={OPERATION_LABELS[p.operation]}
+              featured={p.featured}
+            />
           </div>
         </section>
 

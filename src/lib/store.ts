@@ -83,6 +83,7 @@ async function supaSave(store: Store): Promise<void> {
 
 /* ------------------------------- public API ------------------------------ */
 
+/** Resilient read for the public site — never throws (falls back to seed). */
 export async function getStore(): Promise<Store> {
   if (supabase()) {
     try {
@@ -92,6 +93,16 @@ export async function getStore(): Promise<Store> {
       return normalize(null);
     }
   }
+  return fileGet();
+}
+
+/**
+ * Strict read used before a write. If the Supabase read fails we THROW instead
+ * of silently returning the seed — otherwise a mutation could overwrite the
+ * real catalog with seed-based data and wipe the user's properties.
+ */
+async function getStoreForWrite(): Promise<Store> {
+  if (supabase()) return supaGet();
   return fileGet();
 }
 
@@ -109,7 +120,7 @@ export async function getSettings(): Promise<SiteSettings> {
 }
 
 export async function upsertProperty(property: Property): Promise<void> {
-  const store = await getStore();
+  const store = await getStoreForWrite();
   const idx = store.properties.findIndex((p) => p.slug === property.slug);
   if (idx >= 0) store.properties[idx] = property;
   else store.properties.unshift(property);
@@ -117,13 +128,13 @@ export async function upsertProperty(property: Property): Promise<void> {
 }
 
 export async function deleteProperty(slug: string): Promise<void> {
-  const store = await getStore();
+  const store = await getStoreForWrite();
   store.properties = store.properties.filter((p) => p.slug !== slug);
   await saveStore(store);
 }
 
 export async function saveSettings(settings: SiteSettings): Promise<void> {
-  const store = await getStore();
+  const store = await getStoreForWrite();
   store.settings = settings;
   await saveStore(store);
 }
