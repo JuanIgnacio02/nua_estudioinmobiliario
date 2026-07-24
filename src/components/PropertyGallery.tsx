@@ -41,13 +41,13 @@ export default function PropertyGallery({
   return (
     <>
       {/* Main viewer */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bone-dark md:aspect-[16/8]">
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-bone-dark">
         <Image
           src={images[current]}
           alt={alt}
           fill
           priority
-          quality={90}
+          quality={85}
           sizes="(max-width: 1600px) 100vw, 1600px"
           className="cursor-zoom-in object-cover"
           onClick={() => setLightbox(true)}
@@ -63,7 +63,6 @@ export default function PropertyGallery({
           )}
         </div>
 
-        {/* Counter + open gallery */}
         <button
           onClick={() => setLightbox(true)}
           className="absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-moss-900/70 px-4 py-2 text-xs font-medium text-mint-50 backdrop-blur-sm transition-colors hover:bg-moss-900/90"
@@ -72,7 +71,7 @@ export default function PropertyGallery({
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <path d="M3 15l5-5 4 4 3-3 6 6" />
           </svg>
-          {current + 1} / {total}
+          {total > 1 ? `Ver ${total} fotos` : "Ampliar"}
         </button>
 
         {total > 1 && (
@@ -91,9 +90,7 @@ export default function PropertyGallery({
               key={img + i}
               onClick={() => setCurrent(i)}
               className={`relative aspect-[4/3] h-20 shrink-0 overflow-hidden rounded-lg transition-all md:h-24 ${
-                i === current
-                  ? "ring-2 ring-moss-600"
-                  : "opacity-60 hover:opacity-100"
+                i === current ? "ring-2 ring-moss-600" : "opacity-60 hover:opacity-100"
               }`}
             >
               <Image src={img} alt={`${alt} — foto ${i + 1}`} fill sizes="120px" className="object-cover" />
@@ -105,32 +102,37 @@ export default function PropertyGallery({
       {/* Lightbox */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-[100] flex flex-col bg-moss-900/97 backdrop-blur"
+          className="fixed inset-0 z-[100] flex flex-col bg-moss-900/98"
           onClick={() => setLightbox(false)}
         >
+          {/* Top bar */}
           <div className="flex items-center justify-between px-5 py-4 text-mint-50 md:px-10">
-            <span className="text-sm">
-              {current + 1} / {total}
+            <span className="text-sm tracking-wide">
+              {current + 1} <span className="text-mint-100/40">/ {total}</span>
             </span>
             <button
               onClick={() => setLightbox(false)}
-              className="rounded-full border border-mint-100/30 px-4 py-1.5 text-sm transition-colors hover:bg-mint-100/10"
+              className="rounded-full border border-mint-100/25 px-4 py-1.5 text-sm transition-colors hover:bg-mint-100/10"
             >
               Cerrar ✕
             </button>
           </div>
+
+          {/* Centered, size-capped image (no over-upscaling → stays sharp) */}
           <div
-            className="relative flex-1"
+            className="relative flex flex-1 items-center justify-center px-4 md:px-16"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              src={images[current]}
-              alt={alt}
-              fill
-              quality={95}
-              sizes="100vw"
-              className="object-contain p-4 md:p-10"
-            />
+            <div className="relative h-full max-h-[74vh] w-full max-w-[1360px]">
+              <Image
+                src={images[current]}
+                alt={alt}
+                fill
+                quality={90}
+                sizes="(max-width: 1360px) 92vw, 1360px"
+                className="object-contain"
+              />
+            </div>
             {total > 1 && (
               <>
                 <NavBtn side="left" onClick={() => go(-1)} light />
@@ -138,6 +140,28 @@ export default function PropertyGallery({
               </>
             )}
           </div>
+
+          {/* Filmstrip */}
+          {total > 1 && (
+            <div
+              className="flex justify-center gap-2 overflow-x-auto px-5 py-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {images.map((img, i) => (
+                <button
+                  key={img + i}
+                  onClick={() => setCurrent(i)}
+                  className={`relative aspect-[4/3] h-14 shrink-0 overflow-hidden rounded-md transition-all md:h-16 ${
+                    i === current
+                      ? "ring-2 ring-mint-50"
+                      : "opacity-40 hover:opacity-80"
+                  }`}
+                >
+                  <Image src={img} alt="" fill sizes="90px" className="object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>
@@ -161,10 +185,10 @@ function NavBtn({
       }}
       aria-label={side === "left" ? "Anterior" : "Siguiente"}
       className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full backdrop-blur-sm transition-colors ${
-        side === "left" ? "left-4" : "right-4"
+        side === "left" ? "left-3 md:left-5" : "right-3 md:right-5"
       } ${
         light
-          ? "bg-mint-100/10 text-mint-50 hover:bg-mint-100/20"
+          ? "bg-mint-100/10 text-mint-50 hover:bg-mint-100/25"
           : "bg-moss-900/60 text-mint-50 hover:bg-moss-900/90"
       }`}
     >
