@@ -13,6 +13,7 @@ import {
 import { savePropertyAction, geocodeAction } from "@/app/admin/actions";
 import TagInput from "./TagInput";
 import ImageManager from "./ImageManager";
+import LocationPicker from "./LocationPicker";
 
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
@@ -212,6 +213,11 @@ export default function PropertyForm({ property }: { property?: Property }) {
         {geoState.error && (
           <p className="mt-3 text-sm text-red-600">{geoState.error}</p>
         )}
+
+        {/* Interactive picker — buscá por dirección y/o ajustá a mano */}
+        <div className="mt-4">
+          <LocationPicker coords={coords} onChange={setCoords} />
+        </div>
       </section>
 
       {/* Description */}
