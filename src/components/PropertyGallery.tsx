@@ -118,18 +118,18 @@ export default function PropertyGallery({
             </button>
           </div>
 
-          {/* Centered, size-capped image (no over-upscaling → stays sharp) */}
+          {/* Centered, size-capped image (kept small so it never upscales) */}
           <div
             className="relative flex flex-1 items-center justify-center px-4 md:px-16"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative h-full max-h-[74vh] w-full max-w-[1360px]">
+            <div className="relative h-full max-h-[60vh] w-full max-w-[860px]">
               <Image
                 src={images[current]}
                 alt={alt}
                 fill
                 quality={90}
-                sizes="(max-width: 1360px) 92vw, 1360px"
+                sizes="(max-width: 860px) 90vw, 860px"
                 className="object-contain"
               />
             </div>
