@@ -18,6 +18,19 @@ import LocationPicker from "./LocationPicker";
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
 
+/** Parse "lat, lng" (como copia Google Maps) a [lat, lng]. Tolera coma o espacio. */
+function parseLatLng(s: string): [number, number] | null {
+  const nums = s
+    .split(/[,\s]+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map(Number);
+  if (nums.length === 2 && nums.every(Number.isFinite)) {
+    return [nums[0], nums[1]];
+  }
+  return null;
+}
+
 export default function PropertyForm({ property }: { property?: Property }) {
   const isEdit = !!property;
   const [images, setImages] = useState<string[]>(
@@ -34,6 +47,10 @@ export default function PropertyForm({ property }: { property?: Property }) {
   const [coords, setCoords] = useState<[number, number] | undefined>(
     property?.coords
   );
+  // Texto del campo combinado "lat, lng" (lo que pegás de Google Maps).
+  const [coordsText, setCoordsText] = useState(
+    property?.coords ? `${property.coords[0]}, ${property.coords[1]}` : ""
+  );
   const [areaValue, setAreaValue] = useState<number | undefined>(property?.area);
   const [geoState, setGeoState] = useState<{
     loading: boolean;
@@ -41,12 +58,18 @@ export default function PropertyForm({ property }: { property?: Property }) {
     error?: string;
   }>({ loading: false });
 
+  // Setea las coords desde el mapa/geocoding y refleja el texto del campo.
+  const updateCoords = (c: [number, number] | undefined) => {
+    setCoords(c);
+    setCoordsText(c ? `${c[0]}, ${c[1]}` : "");
+  };
+
   const onGeocode = async () => {
     if (!location.trim()) return;
     setGeoState({ loading: true });
     const res = await geocodeAction(location);
     if (res.ok && res.coords) {
-      setCoords(res.coords);
+      updateCoords(res.coords);
       setGeoState({ loading: false, label: res.label });
     } else {
       setGeoState({ loading: false, error: res.error });
@@ -222,47 +245,30 @@ export default function PropertyForm({ property }: { property?: Property }) {
 
         {/* Interactive picker — buscá por dirección y/o ajustá a mano */}
         <div className="mt-4">
-          <LocationPicker coords={coords} onChange={setCoords} />
+          <LocationPicker coords={coords} onChange={updateCoords} />
         </div>
 
-        {/* Coordenadas manuales — alternativa al geocoding / clic en el mapa */}
-        <div className="mt-4 grid gap-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          <Field label="Latitud">
+        {/* Coordenadas: pegá el par de una (como copia Google Maps) */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <Field label="Coordenadas (lat, lng)">
             <input
-              type="number"
-              step="any"
+              type="text"
               inputMode="decimal"
-              value={coords?.[0] ?? ""}
-              onChange={(e) =>
-                setCoords([
-                  e.target.value === "" ? 0 : Number(e.target.value),
-                  coords?.[1] ?? 0,
-                ])
-              }
+              value={coordsText}
+              onChange={(e) => {
+                setCoordsText(e.target.value);
+                const parsed = parseLatLng(e.target.value);
+                if (parsed) setCoords(parsed);
+                else if (e.target.value.trim() === "") setCoords(undefined);
+              }}
               className="admin-input"
-              placeholder="-34.6176"
-            />
-          </Field>
-          <Field label="Longitud">
-            <input
-              type="number"
-              step="any"
-              inputMode="decimal"
-              value={coords?.[1] ?? ""}
-              onChange={(e) =>
-                setCoords([
-                  coords?.[0] ?? 0,
-                  e.target.value === "" ? 0 : Number(e.target.value),
-                ])
-              }
-              className="admin-input"
-              placeholder="-68.3319"
+              placeholder="-34.6176, -68.3319"
             />
           </Field>
           {coords && (
             <button
               type="button"
-              onClick={() => setCoords(undefined)}
+              onClick={() => updateCoords(undefined)}
               className="mb-0.5 rounded-full border border-moss-600/20 px-4 py-2.5 text-sm text-ink-soft/70 transition-colors hover:bg-mint-100"
             >
               Quitar pin
@@ -270,8 +276,9 @@ export default function PropertyForm({ property }: { property?: Property }) {
           )}
         </div>
         <p className="mt-2 text-xs text-ink-soft/60">
-          Podés pegar las coordenadas a mano (ej. desde Google Maps) o marcar el
-          punto en el mapa de arriba — se sincronizan.
+          Pegá las dos coordenadas juntas desde Google Maps (ej.{" "}
+          <span className="font-mono">-34.6176, -68.3319</span>) o marcá el punto
+          en el mapa de arriba — se sincronizan.
         </p>
       </section>
 
