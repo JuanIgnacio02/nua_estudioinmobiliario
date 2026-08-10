@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyMapEmbed from "@/components/PropertyMapEmbed";
+import LotBoundaryMapEmbed from "@/components/LotBoundaryMapEmbed";
 import PropertyInquiry from "@/components/PropertyInquiry";
 import PropertyGallery from "@/components/PropertyGallery";
 import {
@@ -236,10 +237,19 @@ export default async function PropertyDetail({
               </div>
               <span className="text-sm text-ink-soft/60">
                 {p.zone} · {p.city}
+                {p.boundary && p.boundary.length >= 3 && " · contorno del lote"}
               </span>
             </div>
             <div className="h-[55vh] min-h-[400px] w-full overflow-hidden rounded-2xl border border-moss-600/10">
-              <PropertyMapEmbed slug={p.slug} properties={properties} />
+              {p.boundary && p.boundary.length >= 3 ? (
+                <LotBoundaryMapEmbed
+                  property={p}
+                  boundary={p.boundary}
+                  showInfoCard={false}
+                />
+              ) : (
+                <PropertyMapEmbed slug={p.slug} properties={properties} />
+              )}
             </div>
           </div>
         </section>

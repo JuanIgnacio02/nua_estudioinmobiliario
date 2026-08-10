@@ -10,6 +10,8 @@ import {
   upsertProperty,
   deleteProperty,
   saveSettings,
+  upsertLoteo,
+  deleteLoteo,
 } from "@/lib/store";
 import { cloudinaryEnabled, uploadToCloudinary } from "@/lib/cloudinary";
 import type {
@@ -18,6 +20,12 @@ import type {
   PropertyType,
   SiteSettings,
 } from "@/lib/properties";
+import {
+  polygonAreaM2,
+  type Loteo,
+  type Lot,
+  type LotStatus,
+} from "@/lib/loteos";
 
 const IMG_DIR = path.join(process.cwd(), "public", "images", "properties");
 
@@ -270,6 +278,104 @@ export async function saveAboutAction(formData: FormData) {
   await saveSettings(settings);
   revalidateAll();
   redirect("/admin/nosotras?ok=1");
+}
+
+/* ---------------------------- loteos CRUD ------------------------------ */
+
+const LOT_STATUSES: LotStatus[] = ["disponible", "reservado", "vendido"];
+
+/** Parse la lista de lotes (JSON) enviada por el editor del admin. */
+function parseLots(raw: FormDataEntryValue | null): Lot[] {
+  if (!raw) return [];
+  let arr: unknown;
+  try {
+    arr = JSON.parse(String(raw));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(arr)) return [];
+
+  const lots: Lot[] = [];
+  for (const item of arr) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const boundary = Array.isArray(o.boundary)
+      ? (o.boundary as unknown[])
+          .filter(
+            (p): p is [number, number] =>
+              Array.isArray(p) &&
+              p.length === 2 &&
+              Number.isFinite(p[0]) &&
+              Number.isFinite(p[1])
+          )
+          .map(([a, b]) => [a, b] as [number, number])
+      : [];
+    if (boundary.length < 3) continue; // un lote sin polígono no sirve
+
+    const status = LOT_STATUSES.includes(o.status as LotStatus)
+      ? (o.status as LotStatus)
+      : "disponible";
+    const areaRaw = Number(o.area);
+    const area =
+      Number.isFinite(areaRaw) && areaRaw > 0
+        ? Math.round(areaRaw)
+        : polygonAreaM2(boundary);
+    const priceRaw = Number(o.price);
+    const price = Number.isFinite(priceRaw) && priceRaw > 0 ? priceRaw : undefined;
+
+    lots.push({
+      number: String(o.number ?? lots.length + 1).trim() || String(lots.length + 1),
+      boundary,
+      area,
+      price,
+      status,
+    });
+  }
+  return lots;
+}
+
+export async function saveLoteoAction(formData: FormData) {
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return;
+
+  const existingSlug = String(formData.get("slug") ?? "").trim();
+  const store = await getStore();
+  let slug = existingSlug || slugify(title);
+  if (!existingSlug) {
+    const base = slug || "loteo";
+    let n = 1;
+    while (store.loteos.some((l) => l.slug === slug)) {
+      slug = `${base}-${n++}`;
+    }
+  }
+
+  const lat = num(formData.get("lat"));
+  const lng = num(formData.get("lng"));
+
+  const loteo: Loteo = {
+    slug,
+    title,
+    location: String(formData.get("location") ?? "").trim(),
+    zone: String(formData.get("zone") ?? "").trim() || "San Rafael",
+    city: String(formData.get("city") ?? "").trim() || "San Rafael",
+    coords: lat != null && lng != null ? [lat, lng] : [-34.6176, -68.3319],
+    image: String(formData.get("image") ?? "").trim() || undefined,
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    lots: parseLots(formData.get("lots")),
+  };
+
+  await upsertLoteo(loteo);
+  revalidateAll();
+  redirect("/admin/loteos");
+}
+
+export async function deleteLoteoAction(formData: FormData) {
+  const slug = String(formData.get("slug") ?? "");
+  if (slug) {
+    await deleteLoteo(slug);
+    revalidateAll();
+  }
+  redirect("/admin/loteos");
 }
 
 /** Upload for non-property images (e.g. team photo, hero). */

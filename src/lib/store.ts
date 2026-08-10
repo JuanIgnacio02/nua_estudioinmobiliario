@@ -7,6 +7,7 @@ import {
   type Property,
   type SiteSettings,
 } from "./properties";
+import { seedLoteos, type Loteo } from "./loteos";
 import { supabase, STORE_TABLE, STORE_ID } from "./supabase";
 
 /**
@@ -16,6 +17,7 @@ import { supabase, STORE_TABLE, STORE_ID } from "./supabase";
 
 export type Store = {
   properties: Property[];
+  loteos: Loteo[];
   settings: SiteSettings;
 };
 
@@ -25,6 +27,7 @@ const STORE_PATH = path.join(DATA_DIR, "store.json");
 function normalize(partial: Partial<Store> | null | undefined): Store {
   return {
     properties: partial?.properties ?? seedProperties,
+    loteos: partial?.loteos ?? seedLoteos,
     settings: { ...defaultSettings, ...partial?.settings },
   };
 }
@@ -136,5 +139,25 @@ export async function deleteProperty(slug: string): Promise<void> {
 export async function saveSettings(settings: SiteSettings): Promise<void> {
   const store = await getStoreForWrite();
   store.settings = settings;
+  await saveStore(store);
+}
+
+/* ------------------------------- loteos -------------------------------- */
+
+export async function getLoteos(): Promise<Loteo[]> {
+  return (await getStore()).loteos;
+}
+
+export async function upsertLoteo(loteo: Loteo): Promise<void> {
+  const store = await getStoreForWrite();
+  const idx = store.loteos.findIndex((l) => l.slug === loteo.slug);
+  if (idx >= 0) store.loteos[idx] = loteo;
+  else store.loteos.unshift(loteo);
+  await saveStore(store);
+}
+
+export async function deleteLoteo(slug: string): Promise<void> {
+  const store = await getStoreForWrite();
+  store.loteos = store.loteos.filter((l) => l.slug !== slug);
   await saveStore(store);
 }

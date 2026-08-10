@@ -9,6 +9,7 @@ import { logout } from "@/app/admin/auth-actions";
 const NAV = [
   { label: "Dashboard", href: "/admin", icon: "grid" },
   { label: "Propiedades", href: "/admin/propiedades", icon: "home" },
+  { label: "Loteos", href: "/admin/loteos", icon: "map" },
   { label: "Contacto", href: "/admin/contacto", icon: "phone" },
   { label: "Sobre nosotras", href: "/admin/nosotras", icon: "users" },
 ];
@@ -16,6 +17,9 @@ const NAV = [
 const ICONS: Record<string, React.ReactNode> = {
   grid: <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />,
   home: <path d="M3 10.5 12 3l9 7.5M5 9v11h14V9" />,
+  map: (
+    <path d="m9 20-6 2V6l6-2m0 16 6 2m-6-2V4m6 18 6-2V4l-6 2m0 16V6m0 0L9 4" />
+  ),
   phone: (
     <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
   ),

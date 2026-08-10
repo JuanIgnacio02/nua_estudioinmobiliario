@@ -14,6 +14,7 @@ import {
 const LINKS = [
   { label: "Inicio", href: "/" },
   { label: "Propiedades", href: "/propiedades" },
+  { label: "Lotes", href: "/lotes" },
   { label: "Sobre nosotras", href: "/nosotras" },
   { label: "Contacto", href: "/contacto" },
 ];

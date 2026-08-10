@@ -14,6 +14,7 @@ import { savePropertyAction, geocodeAction } from "@/app/admin/actions";
 import TagInput from "./TagInput";
 import ImageManager from "./ImageManager";
 import LocationPicker from "./LocationPicker";
+import BoundaryPicker from "./BoundaryPicker";
 
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
@@ -55,6 +56,9 @@ export default function PropertyForm({ property }: { property?: Property }) {
   const [coveredValue, setCoveredValue] = useState<number | undefined>(
     property?.coveredArea
   );
+  const [boundary, setBoundary] = useState<[number, number][]>(
+    property?.boundary ?? []
+  );
   const [geoState, setGeoState] = useState<{
     loading: boolean;
     label?: string;
@@ -86,6 +90,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
       <input type="hidden" name="services" value={JSON.stringify(services)} />
       <input type="hidden" name="amenities" value={JSON.stringify(amenities)} />
       <input type="hidden" name="highlights" value={JSON.stringify(highlights)} />
+      <input type="hidden" name="boundary" value={JSON.stringify(boundary)} />
       {coords && (
         <>
           <input type="hidden" name="lat" value={coords[0]} />
@@ -301,6 +306,41 @@ export default function PropertyForm({ property }: { property?: Property }) {
           <span className="font-mono">-34.6176, -68.3319</span>) o marcá el punto
           en el mapa de arriba — se sincronizan.
         </p>
+
+        {/* Contorno del lote — dibujar sobre el satélite (ideal para terrenos) */}
+        <div className="mt-6 border-t border-moss-600/10 pt-5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-eyebrow text-sage-500">
+              Contorno del lote (opcional)
+            </span>
+            {boundary.length >= 3 ? (
+              <span className="text-xs font-medium text-moss-600">
+                ✓ {boundary.length} puntos dibujados
+              </span>
+            ) : boundary.length > 0 ? (
+              <span className="text-xs text-ink-soft/60">
+                {boundary.length} punto(s) — mínimo 3 para guardar
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1 mb-3 text-xs text-ink-soft/60">
+            Dibujá los límites reales del terreno sobre la vista satelital. Se
+            muestran en la ficha de la propiedad. Ideal para lotes.
+          </p>
+          {coords ? (
+            <BoundaryPicker
+              center={coords}
+              area={areaValue}
+              boundary={boundary}
+              onChange={setBoundary}
+            />
+          ) : (
+            <p className="rounded-xl border border-dashed border-moss-600/20 bg-mint-50/40 px-4 py-6 text-center text-sm text-ink-soft/60">
+              Ubicá primero la propiedad en el mapa (arriba) para poder dibujar
+              el contorno del lote.
+            </p>
+          )}
+        </div>
       </section>
 
       {/* Description */}
