@@ -56,11 +56,21 @@ export default function LoteoMasterPlan({
 }) {
   const [view, setView] = useState<"sat" | "mapa">("sat");
   const [selected, setSelected] = useState<number | null>(null);
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
 
   const center = loteo.coords;
   const points = useMemo(() => allPoints(loteo), [loteo]);
   const stats = useMemo(() => loteoStats(loteo), [loteo]);
   const active = selected != null ? loteo.lots[selected] : null;
+
+  // Al filtrar, si el lote abierto queda atenuado se cierra su ficha.
+  const toggleOnlyAvailable = () => {
+    setOnlyAvailable((prev) => {
+      const next = !prev;
+      if (next && active && active.status !== "disponible") setSelected(null);
+      return next;
+    });
+  };
 
   const wa = (lot: Lot) =>
     `https://wa.me/${phoneHref}?text=${encodeURIComponent(
@@ -102,21 +112,27 @@ export default function LoteoMasterPlan({
         {loteo.lots.map((lot, i) => {
           const c = LOT_STATUS_COLORS[lot.status];
           const isSel = i === selected;
+          // Con el filtro activo, lo no disponible se atenúa y deja de responder.
+          const dimmed = onlyAvailable && lot.status !== "disponible";
           return (
             <Polygon
               key={i}
               positions={lot.boundary}
               pathOptions={{
                 color: isSel ? "#16180f" : c.stroke,
-                weight: isSel ? 4 : 2,
+                weight: isSel ? 4 : dimmed ? 1 : 2,
+                opacity: dimmed ? 0.35 : 1,
                 fillColor: c.fill,
-                fillOpacity: isSel ? 0.75 : 0.55,
+                fillOpacity: dimmed ? 0.1 : isSel ? 0.75 : 0.55,
+                interactive: !dimmed,
               }}
-              eventHandlers={{ click: () => setSelected(i) }}
+              eventHandlers={dimmed ? {} : { click: () => setSelected(i) }}
             >
-              <Tooltip direction="center" permanent className="nua-lot-tip">
-                {lot.number}
-              </Tooltip>
+              {!dimmed && (
+                <Tooltip direction="center" permanent className="nua-lot-tip">
+                  {lot.number}
+                </Tooltip>
+              )}
             </Polygon>
           );
         })}
@@ -141,9 +157,26 @@ export default function LoteoMasterPlan({
         ))}
       </div>
 
-      {/* Leyenda + conteo */}
-      <div className="absolute left-3 top-3 z-[1000] rounded-2xl border border-white/50 bg-white/92 px-4 py-3 text-xs shadow-md backdrop-blur">
-        <p className="mb-2 font-semibold text-ink">
+      {/* Filtro: resalta lo que está a la venta */}
+      {stats.disponible > 0 && stats.disponible < stats.total && (
+        <button
+          onClick={toggleOnlyAvailable}
+          aria-pressed={onlyAvailable}
+          className={`absolute right-3 top-14 z-[1000] flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur transition-colors ${
+            onlyAvailable
+              ? "border-moss-600 bg-moss-600 text-mint-50"
+              : "border-white/60 bg-white/90 text-ink-soft hover:bg-mint-100"
+          }`}
+        >
+          <span aria-hidden>{onlyAvailable ? "✓" : "○"}</span>
+          Solo disponibles
+        </button>
+      )}
+
+      {/* Leyenda + conteo. En mobile se omite el titular (ya está en la página)
+          para que no choque con el toggle Satélite/Mapa. */}
+      <div className="absolute left-3 top-3 z-[1000] rounded-2xl border border-white/50 bg-white/92 px-3 py-2.5 text-xs shadow-md backdrop-blur sm:px-4 sm:py-3">
+        <p className="mb-2 hidden font-semibold text-ink sm:block">
           {stats.total} lotes
           {stats.desde
             ? ` · desde US$ ${stats.desde.toLocaleString("es-AR")}`
