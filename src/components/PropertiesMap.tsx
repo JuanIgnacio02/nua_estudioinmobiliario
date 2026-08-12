@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -24,13 +25,11 @@ function FlyController({
   pins,
   markerRefs,
   initialPoints,
-  focus = false,
 }: {
   activeSlug: string | null;
   pins: Pin[];
   markerRefs: React.MutableRefObject<Record<string, L.Marker | null>>;
   initialPoints: [number, number][];
-  focus?: boolean;
 }) {
   const map = useMap();
 
@@ -54,8 +53,7 @@ function FlyController({
     if (initialPoints.length === 0) return;
     const t = setTimeout(() => {
       map.invalidateSize({ animate: false });
-      if (initialPoints.length === 1)
-        map.setView(initialPoints[0], focus ? 14 : 14);
+      if (initialPoints.length === 1) map.setView(initialPoints[0], 14);
       else map.fitBounds(initialPoints, { padding: [60, 60], maxZoom: 14 });
     }, 250);
     return () => clearTimeout(t);
@@ -167,7 +165,6 @@ export default function PropertiesMap({
         pins={pins}
         markerRefs={markerRefs}
         initialPoints={initialPoints}
-        focus={!!focusSlug}
       />
       {pins.map(({ property, pos }) => (
         <Marker
@@ -183,7 +180,13 @@ export default function PropertiesMap({
         >
           <Popup>
             <div className="nua-popup">
-              <img src={property.image} alt={property.title} />
+              {/* 72×72 = el thumbnail del popup compacto (.nua-popup img) */}
+              <Image
+                src={property.image}
+                alt={property.title}
+                width={72}
+                height={72}
+              />
               <div className="nua-popup__body">
                 <span className="nua-popup__type">
                   {TYPE_LABELS[property.type]} · {property.city}
