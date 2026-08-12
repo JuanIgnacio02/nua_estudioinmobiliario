@@ -186,7 +186,7 @@ export async function savePropertyAction(formData: FormData) {
   let slug = existingSlug || slugify(title);
   // Ensure uniqueness for new properties.
   if (!existingSlug) {
-    let base = slug || "propiedad";
+    const base = slug || "propiedad";
     let n = 1;
     while (store.properties.some((p) => p.slug === slug)) {
       slug = `${base}-${n++}`;

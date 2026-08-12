@@ -96,10 +96,14 @@ export default function Navbar() {
     };
   }, [open]);
 
-  // Close on route change.
-  useEffect(() => {
+  // Close on route change. Se ajusta durante el render en vez de con un efecto:
+  // el efecto provocaba un render en cascada (pintaba el menú abierto y recién
+  // después lo cerraba). React descarta este render y vuelve a renderizar.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   const light = !scrolled && !open; // white text over dark hero/header
 
