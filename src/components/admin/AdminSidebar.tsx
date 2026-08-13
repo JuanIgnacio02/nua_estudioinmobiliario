@@ -53,7 +53,7 @@ export default function AdminSidebar() {
           open
             ? "fixed inset-x-0 bottom-0 top-14 z-40 block overflow-y-auto"
             : "hidden"
-        } text-ink lg:static lg:top-0 lg:z-auto lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-visible`}
+        } text-ink lg:sticky lg:top-0 lg:z-auto lg:block lg:h-screen lg:w-64 lg:shrink-0 lg:self-start lg:overflow-y-auto`}
       >
         <div className="flex h-full flex-col p-5">
           <Link href="/admin" className="mb-10 hidden items-center gap-3 px-2 lg:flex">
