@@ -13,6 +13,7 @@ import {
   getRelated,
   formatPrice,
   propertyImages,
+  publishedProperties,
   TYPE_LABELS,
   OPERATION_LABELS,
 } from "@/lib/properties";
@@ -27,7 +28,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const { properties } = await getStore();
-  const p = findProperty(properties, slug);
+  const p = findProperty(publishedProperties(properties), slug);
   if (!p) return { title: "Propiedad no encontrada" };
   return {
     title: p.title,
@@ -42,7 +43,9 @@ export default async function PropertyDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { properties, settings } = await getStore();
+  const { properties: all, settings } = await getStore();
+  // Los borradores no existen para el público: 404 y fuera de relacionadas/mapa.
+  const properties = publishedProperties(all);
   const p = findProperty(properties, slug);
   if (!p) notFound();
 

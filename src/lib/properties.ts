@@ -31,7 +31,20 @@ export type Property = {
   coords?: [number, number];
   /** Contorno del lote dibujado en el admin: lista de vértices [lat, lng]. */
   boundary?: [number, number][];
+  /**
+   * Borrador: se ve en el admin pero NO en la web pública. Se guarda como
+   * opcional para que las propiedades ya cargadas sigan publicadas.
+   */
+  draft?: boolean;
 };
+
+/**
+ * Propiedades visibles en la web pública (excluye borradores).
+ * Usar SIEMPRE en páginas públicas; el admin trabaja con la lista completa.
+ */
+export function publishedProperties(list: Property[]): Property[] {
+  return list.filter((p) => !p.draft);
+}
 
 /** Galería de una propiedad (retrocompatible con `image` único). */
 export function propertyImages(p: Pick<Property, "image" | "images">): string[] {

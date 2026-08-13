@@ -147,7 +147,7 @@ export default function AboutEditor({
       <button
         type="submit"
         disabled={uploading}
-        className="rounded-full bg-moss-600 px-8 py-3.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
+        className="glass-btn-primary disabled:opacity-60"
       >
         Guardar cambios
       </button>

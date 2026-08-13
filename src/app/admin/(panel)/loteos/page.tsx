@@ -21,7 +21,7 @@ export default async function AdminLoteos() {
         </div>
         <Link
           href="/admin/loteos/nuevo"
-          className="inline-flex items-center gap-2 rounded-full bg-moss-600 px-6 py-3 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700"
+          className="glass-btn-primary"
         >
           + Nuevo loteo
         </Link>
@@ -33,7 +33,7 @@ export default async function AdminLoteos() {
           return (
             <div
               key={l.slug}
-              className="flex flex-wrap items-center gap-4 rounded-2xl border border-moss-600/10 bg-mint-50/20 p-4 transition-colors hover:bg-mint-50/50"
+              className="glass-panel glass-card flex flex-wrap items-center gap-4 p-4"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{l.title}</p>

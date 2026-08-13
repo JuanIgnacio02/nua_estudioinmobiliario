@@ -5,7 +5,12 @@ import PropertyExplorer from "@/components/PropertyExplorer";
 import MapExplorer from "@/components/MapExplorer";
 import AnimatedHeading from "@/components/anim/AnimatedHeading";
 import Logo from "@/components/Logo";
-import { TYPE_LABELS, getZones, type PropertyType } from "@/lib/properties";
+import {
+  TYPE_LABELS,
+  getZones,
+  publishedProperties,
+  type PropertyType,
+} from "@/lib/properties";
 import { getStore } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +30,8 @@ export default async function PropiedadesPage({
   const initialType =
     type && type in TYPE_LABELS ? (type as PropertyType) : undefined;
 
-  const { properties, settings } = await getStore();
+  const { properties: all, settings } = await getStore();
+  const properties = publishedProperties(all);
   const zones = getZones(properties);
 
   return (

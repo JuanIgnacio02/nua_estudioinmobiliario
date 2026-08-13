@@ -1,137 +1,214 @@
 import Link from "next/link";
 import { getStore } from "@/lib/store";
-import { formatPrice, TYPE_LABELS } from "@/lib/properties";
+import {
+  formatPrice,
+  formatArea,
+  publishedProperties,
+  TYPE_LABELS,
+  type PropertyType,
+} from "@/lib/properties";
+import { loteoStats } from "@/lib/loteos";
+
+export const dynamic = "force-dynamic";
+
+const money = (n: number) => `US$ ${Math.round(n).toLocaleString("es-AR")}`;
 
 export default async function AdminDashboard() {
-  const { properties } = await getStore();
-  const featured = properties.filter((p) => p.featured).length;
-  const venta = properties.filter((p) => p.operation === "venta").length;
-  const alquiler = properties.filter((p) => p.operation === "alquiler").length;
-  const withCoords = properties.filter((p) => p.coords).length;
+  const { properties, loteos } = await getStore();
+  const publicadas = publishedProperties(properties);
+  const borradores = properties.length - publicadas.length;
+  const sinMapa = properties.filter((p) => !p.coords).length;
 
-  const stats = [
-    { label: "Propiedades", value: properties.length },
-    { label: "Destacadas", value: featured },
-    { label: "En venta", value: venta },
-    { label: "En alquiler", value: alquiler },
+  // Cartera: solo lo que está publicado (es lo que realmente está a la venta).
+  const valorCartera = publicadas.reduce((acc, p) => acc + p.price, 0);
+  const conSuperficie = publicadas.filter((p) => p.area > 0 && p.price > 0);
+  const precioM2 = conSuperficie.length
+    ? conSuperficie.reduce((acc, p) => acc + p.price / p.area, 0) /
+      conSuperficie.length
+    : 0;
+
+  // Loteos
+  const lotesTotal = loteos.reduce((a, l) => a + l.lots.length, 0);
+  const lotesDisponibles = loteos.reduce(
+    (a, l) => a + loteoStats(l).disponible,
+    0
+  );
+
+  // Desgloses
+  const porTipo = (Object.keys(TYPE_LABELS) as PropertyType[])
+    .map((t) => ({
+      label: TYPE_LABELS[t],
+      n: publicadas.filter((p) => p.type === t).length,
+    }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n);
+
+  const porZona = Object.entries(
+    publicadas.reduce<Record<string, number>>((acc, p) => {
+      acc[p.zone] = (acc[p.zone] ?? 0) + 1;
+      return acc;
+    }, {})
+  )
+    .map(([label, n]) => ({ label, n }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 5);
+
+  const kpis = [
+    { label: "Valor de cartera", value: money(valorCartera), sub: `${publicadas.length} publicadas` },
+    { label: "Precio promedio", value: precioM2 ? `${money(precioM2)}/m²` : "—", sub: `sobre ${conSuperficie.length} con superficie` },
+    { label: "Lotes disponibles", value: lotesTotal ? `${lotesDisponibles}` : "—", sub: lotesTotal ? `de ${lotesTotal} en ${loteos.length} loteo${loteos.length === 1 ? "" : "s"}` : "sin loteos cargados" },
+    { label: "En borrador", value: `${borradores}`, sub: borradores ? "no se ven en la web" : "todo publicado" },
   ];
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-10 md:px-10 md:py-14">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-eyebrow text-sage-500">Panel</p>
+          <p className="text-eyebrow text-sage-600">Panel</p>
           <h1 className="mt-2 font-display text-4xl text-ink md:text-5xl">
-            Hola de nuevo 👋
+            Hola de nuevo
           </h1>
           <p className="mt-2 text-ink-soft/70">
-            Gestioná las propiedades y el contenido de la web.
+            Gestioná las propiedades, los loteos y el contenido de la web.
           </p>
         </div>
-        <Link
-          href="/admin/propiedades/nueva"
-          className="inline-flex items-center gap-2 rounded-full bg-moss-600 px-6 py-3 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700"
-        >
+        <Link href="/admin/propiedades/nueva" className="glass-btn-primary">
           + Nueva propiedad
         </Link>
       </header>
 
-      {/* Stats */}
-      <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-moss-600/10 bg-mint-50/40 p-5"
-          >
-            <p className="font-display text-4xl text-moss-600">{s.value}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-sage-500">
-              {s.label}
+      {/* KPIs */}
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map((k) => (
+          <div key={k.label} className="glass-panel p-5">
+            <p className="text-[0.68rem] uppercase tracking-[0.16em] text-sage-600">
+              {k.label}
             </p>
+            <p className="mt-2 font-display text-3xl leading-none text-moss-700">
+              {k.value}
+            </p>
+            <p className="mt-2 text-xs text-ink-soft/60">{k.sub}</p>
           </div>
         ))}
       </div>
 
-      {withCoords < properties.length && (
-        <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-800">
-          {properties.length - withCoords} propiedad(es) sin ubicación en el
-          mapa. Editalas y cargá la dirección para geolocalizarlas.
+      {/* Avisos */}
+      {(sinMapa > 0 || borradores > 0) && (
+        <div className="mt-4 flex flex-wrap gap-3">
+          {sinMapa > 0 && (
+            <p className="glass-panel px-5 py-3 text-sm text-ink-soft/80">
+              ⚠ {sinMapa} propiedad{sinMapa === 1 ? "" : "es"} sin ubicación en
+              el mapa.{" "}
+              <Link
+                href="/admin/propiedades"
+                className="font-medium text-moss-700 underline underline-offset-2"
+              >
+                Revisar
+              </Link>
+            </p>
+          )}
+          {borradores > 0 && (
+            <p className="glass-panel px-5 py-3 text-sm text-ink-soft/80">
+              ✎ {borradores} en borrador, sin publicar.
+            </p>
+          )}
         </div>
       )}
 
-      {/* Quick access */}
-      <div className="mt-10 grid gap-4 sm:grid-cols-3">
-        <QuickCard
-          href="/admin/propiedades"
-          title="Propiedades"
-          desc="Crear, editar y borrar propiedades."
-        />
-        <QuickCard
-          href="/admin/contacto"
-          title="Contacto"
-          desc="Email y WhatsApp de toda la web."
-        />
-        <QuickCard
-          href="/admin/nosotras"
-          title="Sobre nosotras"
-          desc="Foto del equipo, misión y valores."
-        />
+      {/* Desgloses */}
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <Breakdown title="Por tipo" items={porTipo} total={publicadas.length} />
+        <Breakdown title="Por zona" items={porZona} total={publicadas.length} />
       </div>
 
-      {/* Recent */}
-      <section className="mt-12">
+      {/* Recientes */}
+      <section className="mt-10">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-2xl text-ink">Propiedades</h2>
+          <h2 className="font-display text-2xl text-ink">Últimas cargadas</h2>
           <Link
             href="/admin/propiedades"
-            className="text-sm text-moss-600 hover:underline"
+            className="text-sm text-moss-700 hover:underline"
           >
             Ver todas →
           </Link>
         </div>
-        <div className="divide-y divide-moss-600/10 overflow-hidden rounded-2xl border border-moss-600/10">
+        <div className="space-y-2">
           {properties.slice(0, 5).map((p) => (
             <Link
               key={p.slug}
               href={`/admin/propiedades/${p.slug}`}
-              className="flex items-center justify-between gap-4 bg-mint-50/20 px-5 py-4 transition-colors hover:bg-mint-100/50"
+              className="glass-panel glass-card flex items-center justify-between gap-4 px-5 py-3.5"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium text-ink">{p.title}</p>
-                <p className="text-xs text-sage-500">
-                  {TYPE_LABELS[p.type]} · {p.city}
-                  {!p.coords && " · ⚠ sin mapa"}
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-medium text-ink">{p.title}</p>
+                  {p.draft && (
+                    <span className="glass-chip glass-chip--draft">
+                      Borrador
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-sage-600">
+                  {TYPE_LABELS[p.type]} · {p.zone} · {formatArea(p.area)}
                 </p>
               </div>
-              <span className="shrink-0 font-display text-lg text-moss-600">
+              <span className="shrink-0 font-display text-lg text-moss-700">
                 {formatPrice(p)}
               </span>
             </Link>
           ))}
+          {properties.length === 0 && (
+            <p className="glass-panel px-6 py-14 text-center text-ink-soft/60">
+              Todavía no hay propiedades cargadas.
+            </p>
+          )}
         </div>
       </section>
     </div>
   );
 }
 
-function QuickCard({
-  href,
+/** Lista con barra proporcional — se lee de un vistazo sin ser un gráfico. */
+function Breakdown({
   title,
-  desc,
+  items,
+  total,
 }: {
-  href: string;
   title: string;
-  desc: string;
+  items: { label: string; n: number }[];
+  total: number;
 }) {
+  const max = Math.max(1, ...items.map((i) => i.n));
   return (
-    <Link
-      href={href}
-      className="group rounded-2xl border border-moss-600/10 p-6 transition-colors hover:border-moss-600/30 hover:bg-mint-50/40"
-    >
-      <p className="font-display text-xl text-ink group-hover:text-moss-600">
+    <div className="glass-panel p-5">
+      <p className="text-[0.68rem] uppercase tracking-[0.16em] text-sage-600">
         {title}
       </p>
-      <p className="mt-2 text-sm text-ink-soft/70">{desc}</p>
-      <span className="mt-4 inline-block text-sm text-moss-600">Abrir →</span>
-    </Link>
+      {items.length === 0 ? (
+        <p className="mt-4 text-sm text-ink-soft/60">Sin datos todavía.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {items.map((i) => (
+            <li key={i.label}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="truncate text-ink-soft/85">{i.label}</span>
+                <span className="shrink-0 font-medium text-ink">
+                  {i.n}
+                  <span className="ml-1 text-xs font-normal text-ink-soft/50">
+                    {total ? `${Math.round((i.n / total) * 100)}%` : ""}
+                  </span>
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-moss-900/8">
+                <div
+                  className="h-full rounded-full bg-celadon-400"
+                  style={{ width: `${(i.n / max) * 100}%` }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

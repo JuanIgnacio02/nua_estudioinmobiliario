@@ -66,7 +66,7 @@ export default async function AdminContacto({
         </label>
         <button
           type="submit"
-          className="rounded-full bg-moss-600 px-8 py-3.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700"
+          className="glass-btn-primary"
         >
           Guardar cambios
         </button>

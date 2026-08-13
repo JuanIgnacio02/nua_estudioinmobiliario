@@ -145,24 +145,236 @@
   border-color: var(--color-moss-600);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Admin — Liquid glass                                               */
+/*                                                                     */
+/*  El vidrio necesita tres cosas para leerse como vidrio:             */
+/*   1. algo con color detrás (por eso .admin-shell pinta auroras),    */
+/*   2. blur + saturate (la "vibrancy" de Apple realza el color),      */
+/*   3. un realce especular arriba y sombra difusa abajo.              */
+/*  Sin lo primero, el blur no tiene qué difuminar y queda gris plano. */
+/* ------------------------------------------------------------------ */
+
+.admin-shell {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-bone);
+}
+/* Auroras de color: lo que el vidrio difumina. */
+.admin-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      42rem 32rem at 12% -8%,
+      rgba(172, 178, 151, 0.5),
+      transparent 62%
+    ),
+    radial-gradient(
+      38rem 30rem at 92% 8%,
+      rgba(214, 219, 199, 0.62),
+      transparent 60%
+    ),
+    radial-gradient(
+      46rem 34rem at 70% 102%,
+      rgba(151, 161, 114, 0.28),
+      transparent 64%
+    );
+}
+/* Grano finísimo: le saca el plástico al degradado. */
+.admin-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Superficie base */
+.glass-panel {
+  position: relative;
+  border-radius: 1.375rem;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 2px rgba(36, 41, 15, 0.04),
+    0 12px 32px -12px rgba(36, 41, 15, 0.16);
+}
+
+/* Variante interactiva (tarjetas que son enlaces) */
+.glass-card {
+  transition: transform 0.28s var(--ease-out-expo), box-shadow 0.28s,
+    background 0.28s;
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 4px rgba(36, 41, 15, 0.05),
+    0 20px 44px -16px rgba(36, 41, 15, 0.22);
+}
+
+/* Barra lateral: vidrio más denso */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 1px 0 24px -12px rgba(36, 41, 15, 0.18);
+}
+
+/* Ítem de navegación */
+.glass-navitem {
+  position: relative;
+  border-radius: 0.85rem;
+  transition: background 0.2s, color 0.2s;
+}
+.glass-navitem:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+.glass-navitem.is-active {
+  background: var(--color-celadon-400);
+  color: var(--color-moss-900);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 6px 16px -8px rgba(69, 80, 33, 0.55);
+}
+
+/* Control segmentado estilo iOS */
+.glass-segment {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(36, 41, 15, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.glass-segment__btn {
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-ink-soft);
+  transition: background 0.22s, color 0.22s, box-shadow 0.22s;
+}
+.glass-segment__btn.is-active {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--color-moss-700);
+  box-shadow: 0 1px 3px rgba(36, 41, 15, 0.16);
+}
+
+/* Botón de acción principal — verde NÚA con texto oscuro */
+.glass-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.7rem 1.4rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-moss-900);
+  background: var(--color-celadon-400);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 8px 20px -10px rgba(69, 80, 33, 0.7);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.glass-btn-primary:hover {
+  background: var(--color-sage-400);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 12px 26px -10px rgba(69, 80, 33, 0.8);
+}
+.glass-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Botón secundario de vidrio */
+.glass-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.6rem 1.15rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-moss-700);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 4px 14px -8px rgba(36, 41, 15, 0.3);
+  transition: background 0.2s, transform 0.2s;
+}
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* Píldora de estado */
+.glass-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--color-moss-700);
+}
+.glass-chip--draft {
+  background: rgba(217, 164, 65, 0.22);
+  border-color: rgba(154, 106, 18, 0.28);
+  color: #7a5310;
+}
+
 /* Boxed inputs for the admin panel */
 .admin-input {
   width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(69, 80, 33, 0.18);
-  background: rgba(255, 255, 255, 0.7);
-  padding: 0.6rem 0.85rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  padding: 0.65rem 0.9rem;
   font-size: 0.95rem;
   color: var(--color-ink);
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: inset 0 1px 2px rgba(36, 41, 15, 0.05);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .admin-input::placeholder {
-  color: rgba(58, 61, 49, 0.4);
+  color: rgba(58, 61, 49, 0.42);
 }
 .admin-input:focus {
-  border-color: var(--color-moss-600);
-  box-shadow: 0 0 0 3px rgba(69, 80, 33, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--color-celadon-400);
+  box-shadow:
+    inset 0 1px 2px rgba(36, 41, 15, 0.04),
+    0 0 0 4px rgba(172, 178, 151, 0.35);
+}
+
+/* Sin blur disponible: se compensa con opacidad para no perder legibilidad. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-panel,
+  .glass-nav,
+  .glass-btn,
+  .admin-input {
+    background: rgba(255, 255, 255, 0.92);
+  }
 }
 
 /* ------------------------------------------------------------------ */

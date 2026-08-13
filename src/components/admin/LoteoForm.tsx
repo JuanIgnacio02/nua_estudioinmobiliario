@@ -212,7 +212,7 @@ export default function LoteoForm({ loteo }: { loteo?: Loteo }) {
       <div className="flex items-center gap-4 border-t border-moss-600/10 pt-6">
         <button
           type="submit"
-          className="rounded-full bg-moss-600 px-8 py-3.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
+          className="glass-btn-primary disabled:opacity-60"
         >
           {isEdit ? "Guardar cambios" : "Crear loteo"}
         </button>

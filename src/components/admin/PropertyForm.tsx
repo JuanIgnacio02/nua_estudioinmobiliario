@@ -59,6 +59,9 @@ export default function PropertyForm({ property }: { property?: Property }) {
   const [boundary, setBoundary] = useState<[number, number][]>(
     property?.boundary ?? []
   );
+  // Borrador: se guarda pero no sale en la web. Propiedades ya cargadas
+  // (sin el campo) siguen publicadas.
+  const [draft, setDraft] = useState(property?.draft ?? false);
   const [geoState, setGeoState] = useState<{
     loading: boolean;
     label?: string;
@@ -97,6 +100,38 @@ export default function PropertyForm({ property }: { property?: Property }) {
           <input type="hidden" name="lng" value={coords[1]} />
         </>
       )}
+
+      {draft && <input type="hidden" name="draft" value="on" />}
+
+      {/* Estado de publicación */}
+      <section className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <p className="text-eyebrow text-sage-600">Estado</p>
+          <p className="mt-1 text-sm text-ink-soft/75">
+            {draft
+              ? "En borrador: se guarda acá pero no aparece en la web."
+              : "Publicada: visible en la web pública."}
+          </p>
+        </div>
+        <div className="glass-segment">
+          {[
+            { v: false, label: "Publicada" },
+            { v: true, label: "Borrador" },
+          ].map((o) => (
+            <button
+              key={o.label}
+              type="button"
+              onClick={() => setDraft(o.v)}
+              aria-pressed={draft === o.v}
+              className={`glass-segment__btn ${
+                draft === o.v ? "is-active" : ""
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Gallery */}
       <ImageManager value={images} onChange={setImages} />
@@ -235,7 +270,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
             type="button"
             onClick={onGeocode}
             disabled={geoState.loading}
-            className="rounded-full bg-moss-600 px-6 py-2.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
+            className="glass-btn-primary disabled:opacity-60"
           >
             {geoState.loading ? "Buscando…" : "📍 Ubicar en el mapa"}
           </button>
@@ -381,7 +416,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
       <div className="flex items-center gap-4 border-t border-moss-600/10 pt-6">
         <button
           type="submit"
-          className="rounded-full bg-moss-600 px-8 py-3.5 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700 disabled:opacity-60"
+          className="glass-btn-primary disabled:opacity-60"
         >
           {isEdit ? "Guardar cambios" : "Crear propiedad"}
         </button>

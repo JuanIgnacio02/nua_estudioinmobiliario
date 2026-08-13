@@ -84,7 +84,7 @@ export default function LoteoLotsEditor({
           <button
             type="button"
             onClick={addLot}
-            className="rounded-full bg-moss-600 px-4 py-1.5 text-xs font-medium text-mint-100 hover:bg-moss-700"
+            className="glass-btn-primary px-4 py-1.5 text-xs"
           >
             + Agregar lote
           </button>

@@ -216,6 +216,7 @@ export async function savePropertyAction(formData: FormData) {
     image: "",
     images: [],
     featured: formData.get("featured") === "on",
+    draft: formData.get("draft") === "on",
     description: String(formData.get("description") ?? "").trim(),
     coords:
       lat != null && lng != null ? [lat, lng] : undefined,
