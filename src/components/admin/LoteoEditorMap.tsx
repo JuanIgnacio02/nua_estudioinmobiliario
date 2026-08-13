@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -59,16 +59,26 @@ function ClickToAdd({ onAdd }: { onAdd: (c: LatLng) => void }) {
   return null;
 }
 
-function FitOnce({ center }: { center: LatLng }) {
+/**
+ * Encuadra al montar y vuelve a centrar si cambian las coordenadas del loteo,
+ * para que el satélite siga a la ubicación elegida en el paso 1.
+ */
+function FitToCenter({ center }: { center: LatLng }) {
   const map = useMap();
+  const [lat, lng] = center;
+  // Depende de lat/lng (primitivos) y no del array, que cambia de referencia.
+  const framed = useRef(false);
   useEffect(() => {
+    // El timeout deja que el contenedor tenga tamaño y, de paso, debouncea el
+    // tipeo en el campo de coordenadas (cada tecla limpia el anterior).
     const t = setTimeout(() => {
       map.invalidateSize({ animate: false });
-      map.setView(center, 17);
+      // Al montar encuadra a zoom 17; después respeta el zoom del usuario.
+      map.setView([lat, lng], framed.current ? map.getZoom() : 17);
+      framed.current = true;
     }, 200);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map]);
+  }, [map, lat, lng]);
   return null;
 }
 
@@ -131,7 +141,7 @@ export default function LoteoEditorMap({
         )}
 
         <ClickToAdd onAdd={addVertex} />
-        <FitOnce center={center} />
+        <FitToCenter center={center} />
 
         {/* Lotes ya dibujados (los no seleccionados, tenues y clickeables) */}
         {lots.map((lot, i) => {
