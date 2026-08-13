@@ -223,13 +223,17 @@
     0 20px 44px -16px rgba(36, 41, 15, 0.22);
 }
 
-/* Barra lateral: vidrio más denso */
+/* Barra lateral: vidrio verde claro.
+   Va bastante opaco a propósito: si es muy transparente toma el color del
+   fondo y deja de distinguirse del contenido. */
 .glass-nav {
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(197, 205, 178, 0.88);
   backdrop-filter: blur(30px) saturate(190%);
   -webkit-backdrop-filter: blur(30px) saturate(190%);
-  border-right: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 1px 0 24px -12px rgba(36, 41, 15, 0.18);
+  border-right: 1px solid rgba(69, 80, 33, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    1px 0 30px -10px rgba(36, 41, 15, 0.3);
 }
 
 /* Ítem de navegación */
@@ -239,14 +243,27 @@
   transition: background 0.2s, color 0.2s;
 }
 .glass-navitem:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.55);
 }
+/* Activo: pastilla blanca sobre el verde — el contraste lo da la claridad,
+   no el color, así el ítem se lee sin oscurecer la barra. */
 .glass-navitem.is-active {
-  background: var(--color-celadon-400);
-  color: var(--color-moss-900);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--color-moss-700);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 6px 16px -8px rgba(69, 80, 33, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 14px -6px rgba(36, 41, 15, 0.35);
+}
+.glass-navitem.is-active::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--color-sage-600);
 }
 
 /* Control segmentado estilo iOS */

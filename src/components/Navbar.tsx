@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
@@ -212,17 +211,28 @@ export default function Navbar() {
 
           {/* Side: featured image + contact */}
           <div className="flex flex-col justify-center gap-8">
+            {/* Callejero real de San Rafael (SVG vectorial, ver
+                public/images/mapa-san-rafael.svg). Va como fondo porque es
+                decorativo y así no pesa en el bundle. */}
             <div
               data-menu-meta
-              className="relative hidden aspect-[5/4] overflow-hidden rounded-2xl lg:block"
+              className="relative hidden aspect-[5/4] overflow-hidden rounded-2xl border border-moss-700/10 bg-mint-50 lg:block"
             >
-              <Image
-                src="/images/properties/casa-fincas-diamante.webp"
-                alt="Propiedad destacada NÚA"
-                fill
-                sizes="30vw"
-                className="object-cover"
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: "url('/images/mapa-san-rafael.svg')",
+                  backgroundSize: "125%",
+                }}
               />
+              {/* Degradado para que el texto se lea sobre las calles */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mint-50 via-mint-50/85 to-transparent p-5 pt-14">
+                <p className="text-eyebrow text-sage-500">Dónde estamos</p>
+                <p className="mt-1 font-display text-2xl leading-none text-moss-700">
+                  San Rafael, Mendoza
+                </p>
+              </div>
             </div>
             <div data-menu-meta className="space-y-1">
               <p className="text-eyebrow text-sage-500">Contacto</p>
