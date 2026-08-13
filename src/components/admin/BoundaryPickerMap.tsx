@@ -12,6 +12,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import SatelliteTiles, { SAT_MAX_ZOOM } from "@/components/SatelliteTiles";
 
 type LatLng = [number, number];
 
@@ -124,27 +125,18 @@ export default function BoundaryPickerMap({
       <MapContainer
         center={center}
         zoom={18}
+        maxZoom={SAT_MAX_ZOOM}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
         {view === "sat" ? (
-          <>
-            <TileLayer
-              attribution="Imagery &copy; Esri, Maxar, Earthstar Geographics"
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxNativeZoom={19}
-              maxZoom={21}
-            />
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
-              maxNativeZoom={19}
-              maxZoom={21}
-            />
-          </>
+          <SatelliteTiles />
         ) : (
           <TileLayer
             attribution="&copy; CARTO"
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            maxNativeZoom={19}
+            maxZoom={SAT_MAX_ZOOM}
           />
         )}
 

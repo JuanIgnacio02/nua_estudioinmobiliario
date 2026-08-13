@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Polygon, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import SatelliteTiles, { SAT_MAX_ZOOM } from "@/components/SatelliteTiles";
 import {
   LOT_STATUS_COLORS,
   LOT_STATUS_LABELS,
@@ -39,7 +40,8 @@ function FitToLots({ points }: { points: LatLng[] }) {
     const bounds = L.latLngBounds(points.map((p) => L.latLng(p[0], p[1])));
     const t = setTimeout(() => {
       map.invalidateSize({ animate: false });
-      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 19 });
+      // Tope 18: con imagen real hasta z17, encuadrar más cerca solo agranda.
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18 });
     }, 200);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,28 +86,19 @@ export default function LoteoMasterPlan({
       <MapContainer
         center={center}
         zoom={17}
+        maxZoom={SAT_MAX_ZOOM}
         scrollWheelZoom={false}
         zoomControl
         style={{ height: "100%", width: "100%" }}
       >
         {view === "sat" ? (
-          <>
-            <TileLayer
-              attribution="Imagery &copy; Esri, Maxar, Earthstar Geographics"
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxNativeZoom={19}
-              maxZoom={21}
-            />
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
-              maxNativeZoom={19}
-              maxZoom={21}
-            />
-          </>
+          <SatelliteTiles />
         ) : (
           <TileLayer
             attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            maxNativeZoom={19}
+            maxZoom={SAT_MAX_ZOOM}
           />
         )}
 
