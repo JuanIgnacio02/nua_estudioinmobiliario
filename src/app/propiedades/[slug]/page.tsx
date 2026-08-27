@@ -19,7 +19,15 @@ import {
 } from "@/lib/properties";
 import { getStore } from "@/lib/store";
 
-export const dynamic = "force-dynamic";
+// Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
+// purga la caché, así que los cambios se ven al instante igual.
+export const revalidate = 300;
+
+/** Pre-genera todas las fichas en el build para que abran al instante. */
+export async function generateStaticParams() {
+  const { properties } = await getStore();
+  return publishedProperties(properties).map((p) => ({ slug: p.slug }));
+}
 
 export async function generateMetadata({
   params,

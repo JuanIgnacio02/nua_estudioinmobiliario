@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   TYPE_LABELS,
   OPERATION_LABELS,
@@ -13,26 +13,43 @@ import PropertyCard from "@/components/PropertyCard";
 type SortKey = "featured" | "price-asc" | "price-desc" | "area-desc";
 
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
+
+/** La URL no cambia sin recargar, así que no hay a qué suscribirse. */
+const subscribeToNothing = () => () => {};
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 
 export default function PropertyExplorer({
   properties,
   zones,
-  initialType,
 }: {
   properties: Property[];
   zones: string[];
-  initialType?: PropertyType;
 }) {
   const [operation, setOperation] = useState<Operation | "all">("all");
-  const [type, setType] = useState<PropertyType | "all">(initialType ?? "all");
+  const [type, setType] = useState<PropertyType | "all" | null>(null);
   const [zone, setZone] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("featured");
+
+  // El ?type= se lee del navegador, no en el servidor: así la página se
+  // pre-genera con el listado completo (Google lo ve) y sigue siendo cacheable.
+  // useSyncExternalStore es la API de React para esto: en el servidor devuelve
+  // null y en el cliente el valor real, sin romper la hidratación.
+  const urlType = useSyncExternalStore(
+    subscribeToNothing,
+    () => new URLSearchParams(window.location.search).get("type"),
+    () => null
+  );
+
+  // Lo que elige el usuario manda (incluido "Todos"); si todavía no tocó el
+  // filtro, vale el de la URL.
+  const effectiveType: PropertyType | "all" =
+    type ??
+    (urlType && urlType in TYPE_LABELS ? (urlType as PropertyType) : "all");
 
   const results = useMemo(() => {
     let list = properties.filter((p) => {
       if (operation !== "all" && p.operation !== operation) return false;
-      if (type !== "all" && p.type !== type) return false;
+      if (effectiveType !== "all" && p.type !== effectiveType) return false;
       if (zone !== "all" && p.zone !== zone) return false;
       return true;
     });
@@ -49,7 +66,7 @@ export default function PropertyExplorer({
       }
     });
     return list;
-  }, [properties, operation, type, zone, sort]);
+  }, [properties, operation, effectiveType, zone, sort]);
 
   const reset = () => {
     setOperation("all");
@@ -77,7 +94,7 @@ export default function PropertyExplorer({
           />
           <Select
             label="Tipo"
-            value={type}
+            value={effectiveType}
             onChange={(v) => setType(v as PropertyType | "all")}
             options={[
               ["all", "Todos"],

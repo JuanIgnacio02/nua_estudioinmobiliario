@@ -8,7 +8,9 @@ import CtaBand from "@/components/sections/CtaBand";
 import { getStore } from "@/lib/store";
 import { pickFeatured, publishedProperties } from "@/lib/properties";
 
-export const dynamic = "force-dynamic";
+// Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
+// purga la caché, así que los cambios se ven al instante igual.
+export const revalidate = 300;
 
 export default async function Home() {
   const { properties: all, settings } = await getStore();

@@ -1,0 +1,37 @@
+# Mantiene activo el proyecto de Supabase.
+#
+# El plan gratuito pausa los proyectos tras 7 dias de baja actividad. Este cron
+# consulta la base una vez por dia, que es de sobra para evitarlo.
+#
+# El endpoint vive en el propio sitio (/api/keep-alive), asi que este workflow
+# no necesita ninguna credencial: no hay claves de Supabase guardadas aca.
+name: Mantener Supabase activo
+
+on:
+  schedule:
+    # Todos los dias a las 12:00 UTC (09:00 en Argentina)
+    - cron: "0 12 * * *"
+  # Permite ejecutarlo a mano desde la pestaña Actions
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la base para registrar actividad
+        env:
+          # Se puede sobreescribir con una variable del repo (Settings ->
+          # Secrets and variables -> Actions -> Variables) llamada SITE_URL.
+          SITE_URL: ${{ vars.SITE_URL || 'https://nua-estudioinmobiliario.vercel.app' }}
+        run: |
+          echo "Consultando $SITE_URL/api/keep-alive"
+          code=$(curl -sS -o respuesta.json -w "%{http_code}" \
+                   --max-time 30 --retry 3 --retry-delay 15 \
+                   "$SITE_URL/api/keep-alive")
+          echo "HTTP $code"
+          cat respuesta.json; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::El keep-alive respondio $code. Revisar si el proyecto de Supabase esta pausado."
+            exit 1
+          fi
+          echo "Listo: la base respondio y el contador de inactividad se reinicio."

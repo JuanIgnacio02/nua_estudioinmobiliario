@@ -7,7 +7,15 @@ import LoteoMasterPlanEmbed from "@/components/LoteoMasterPlanEmbed";
 import { getStore } from "@/lib/store";
 import { findLoteo, loteoStats, LOT_STATUS_LABELS } from "@/lib/loteos";
 
-export const dynamic = "force-dynamic";
+// Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
+// purga la caché, así que los cambios se ven al instante igual.
+export const revalidate = 300;
+
+/** Pre-genera los planos en el build para que abran al instante. */
+export async function generateStaticParams() {
+  const { loteos } = await getStore();
+  return loteos.map((l) => ({ slug: l.slug }));
+}
 
 export async function generateMetadata({
   params,

@@ -5,15 +5,12 @@ import PropertyExplorer from "@/components/PropertyExplorer";
 import MapExplorer from "@/components/MapExplorer";
 import AnimatedHeading from "@/components/anim/AnimatedHeading";
 import Logo from "@/components/Logo";
-import {
-  TYPE_LABELS,
-  getZones,
-  publishedProperties,
-  type PropertyType,
-} from "@/lib/properties";
+import { getZones, publishedProperties } from "@/lib/properties";
 import { getStore } from "@/lib/store";
 
-export const dynamic = "force-dynamic";
+// Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
+// purga la caché, así que los cambios se ven al instante igual.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Propiedades",
@@ -21,15 +18,7 @@ export const metadata: Metadata = {
     "Explorá casas, departamentos, terrenos y fincas en venta y alquiler en San Rafael y toda Mendoza. Filtrá por operación, tipo, zona y precio.",
 };
 
-export default async function PropiedadesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ type?: string }>;
-}) {
-  const { type } = await searchParams;
-  const initialType =
-    type && type in TYPE_LABELS ? (type as PropertyType) : undefined;
-
+export default async function PropiedadesPage() {
   const { properties: all, settings } = await getStore();
   const properties = publishedProperties(all);
   const zones = getZones(properties);
@@ -62,11 +51,7 @@ export default async function PropiedadesPage({
         </header>
 
         <div className="-mt-8">
-          <PropertyExplorer
-            properties={properties}
-            zones={zones}
-            initialType={initialType}
-          />
+          <PropertyExplorer properties={properties} zones={zones} />
         </div>
 
         <MapExplorer properties={properties} />
