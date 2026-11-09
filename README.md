@@ -1,3 +1,16 @@
+# NÚA Estudio Inmobiliario
+
+## Base de datos (Supabase)
+
+- `site_store`: el catálogo (fila `id = 1`: propiedades, loteos y configuración).
+- `site_stats`: estadísticas anónimas de la web (visitas a fichas, clics de
+  WhatsApp, pedidos de tasación). Se crea corriendo **una vez**
+  [`supabase/site_stats.sql`](supabase/site_stats.sql) en el SQL Editor de
+  Supabase. Mientras no exista, los contadores se guardan en la fila
+  `site_store` `id = 2` (formato anterior); el SQL los pasa a la tabla nueva.
+- Un workflow diario (`.github/workflows/keep-alive.yml`) consulta la base para
+  que el plan gratuito no la pause.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

@@ -30,7 +30,14 @@ export async function GET() {
     return NextResponse.json({ ok: true, consultadoEn: new Date().toISOString() });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "error desconocido" },
+      // Los errores de Supabase no son instancias de Error: hay que leer
+      // `message` a mano, si no el log solo decía "error desconocido".
+      {
+        ok: false,
+        error:
+          (e as { message?: string } | null)?.message ??
+          (typeof e === "string" ? e : JSON.stringify(e)),
+      },
       { status: 503 }
     );
   }
