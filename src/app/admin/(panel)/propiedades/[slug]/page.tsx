@@ -17,24 +17,26 @@ export default async function EditProperty({
   if (!property) notFound();
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-10 md:px-10 md:py-14">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="admin-page mx-auto max-w-6xl px-5 py-10 md:px-10 md:py-12">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/propiedades"
-          className="text-sm text-ink-soft/60 hover:text-moss-600"
+          className="inline-flex items-center gap-1.5 text-sm text-ink-soft/60 transition-colors hover:text-moss-700"
         >
-          ← Volver a propiedades
+          ← Propiedades
         </Link>
-        <Link
-          href={`/propiedades/${property.slug}`}
-          target="_blank"
-          className="text-sm text-moss-600 hover:underline"
-        >
-          Ver en el sitio ↗
-        </Link>
+        {!property.draft && (
+          <Link
+            href={`/propiedades/${property.slug}`}
+            target="_blank"
+            className="glass-btn text-xs"
+          >
+            Ver en la web ↗
+          </Link>
+        )}
       </div>
-      <h1 className="mt-4 font-display text-4xl text-ink">Editar propiedad</h1>
-      <p className="mt-2 mb-10 text-ink-soft/70">{property.title}</p>
+      <h1 className="mt-3 font-display text-4xl text-ink">Editar propiedad</h1>
+      <p className="mb-8 mt-2 line-clamp-2 text-ink-soft/70">{property.title}</p>
       <PropertyForm property={property} />
     </div>
   );

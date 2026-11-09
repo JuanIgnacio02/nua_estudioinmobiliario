@@ -19,11 +19,14 @@ export default function PropertyCard({
   property,
   index,
   eager = false,
+  preview = false,
 }: {
   property: Property;
   index?: number;
   /** Cargar sin esperar al scroll (solo tarjetas visibles al abrir). */
   eager?: boolean;
+  /** Vista previa del admin: misma tarjeta, sin enlace. */
+  preview?: boolean;
 }) {
   const imgRef = useRef<HTMLDivElement>(null);
   const status = saleStatus(property);
@@ -38,8 +41,10 @@ export default function PropertyCard({
     gsap.to(imgRef.current, { scale: 1, duration: 0.9, ease: "power3.out" });
   };
 
+  const Wrapper = preview ? PreviewBox : Link;
+
   return (
-    <Link
+    <Wrapper
       href={`/propiedades/${property.slug}`}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
@@ -48,14 +53,20 @@ export default function PropertyCard({
       {/* Media */}
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-bone-dark">
         <div ref={imgRef} className="absolute inset-0 will-change-transform">
-          <Image
-            src={property.image}
-            alt={property.title}
-            fill
-            loading={eager ? "eager" : "lazy"}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className={`object-cover ${sold ? "grayscale-[60%]" : ""}`}
-          />
+          {property.image ? (
+            <Image
+              src={property.image}
+              alt={property.title}
+              fill
+              loading={eager ? "eager" : "lazy"}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className={`object-cover ${sold ? "grayscale-[60%]" : ""}`}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-mint-100 to-bone-dark text-sm text-sage-500">
+              Sin fotos todavía
+            </div>
+          )}
         </div>
 
         {status !== "disponible" && (
@@ -135,6 +146,15 @@ export default function PropertyCard({
           </div>
         </div>
       </div>
-    </Link>
+    </Wrapper>
   );
+}
+
+/** Contenedor sin navegación para la vista previa del admin. */
+function PreviewBox({
+  href: _href,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { href: string }) {
+  void _href;
+  return <div {...props} />;
 }

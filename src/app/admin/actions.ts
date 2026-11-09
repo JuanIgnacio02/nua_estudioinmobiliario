@@ -182,10 +182,12 @@ function parseBoundary(
   }
 }
 
-export async function savePropertyAction(formData: FormData) {
+export async function savePropertyAction(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string } | void> {
   await requireAdmin();
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) return;
+  if (!title) return { ok: false, error: "Falta el título." };
 
   const existingSlug = String(formData.get("slug") ?? "").trim();
   const store = await getStore();
@@ -239,7 +241,12 @@ export async function savePropertyAction(formData: FormData) {
 
   await upsertProperty(property);
   revalidateAll();
-  redirect("/admin/propiedades");
+  // El aviso ("Propiedad creada · Ver en la web") viaja en la URL.
+  const qs = new URLSearchParams({
+    ok: existingSlug ? "propiedad-guardada" : "propiedad-creada",
+  });
+  if (!property.draft) qs.set("ver", `/propiedades/${slug}`);
+  redirect(`/admin/propiedades?${qs}`);
 }
 
 export async function deletePropertyAction(formData: FormData) {
@@ -249,27 +256,35 @@ export async function deletePropertyAction(formData: FormData) {
     await deleteProperty(slug);
     revalidateAll();
   }
-  redirect("/admin/propiedades");
+  redirect("/admin/propiedades?ok=propiedad-borrada");
 }
 
 /* ------------------------- site settings -------------------------- */
 
-export async function saveContactAction(formData: FormData) {
+export async function saveContactAction(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
+  const phoneHref = String(formData.get("phoneHref") ?? "").replace(/[^0-9]/g, "");
+  // Un número de WhatsApp argentino con código de país tiene 12-13 dígitos.
+  if (phoneHref.length < 10 || phoneHref.length > 15) {
+    return {
+      ok: false,
+      error: "El número de WhatsApp no parece completo. Usá el formato 5492604003217.",
+    };
+  }
   const store = await getStore();
   const settings: SiteSettings = {
     ...store.settings,
     contact: {
       email: String(formData.get("email") ?? "").trim(),
       phone: String(formData.get("phone") ?? "").trim(),
-      phoneHref: String(formData.get("phoneHref") ?? "")
-        .replace(/[^0-9]/g, "")
-        .trim(),
+      phoneHref,
     },
   };
   await saveSettings(settings);
   revalidateAll();
-  redirect("/admin/contacto?ok=1");
+  return { ok: true };
 }
 
 /** Descripciones de los pilares: JSON {nombre: texto}. Ignora lo que no sea texto. */
@@ -286,7 +301,9 @@ function parsePillarTexts(raw: FormDataEntryValue | null): Record<string, string
   }
 }
 
-export async function saveAboutAction(formData: FormData) {
+export async function saveAboutAction(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   const store = await getStore();
   const settings: SiteSettings = {
@@ -305,7 +322,7 @@ export async function saveAboutAction(formData: FormData) {
   };
   await saveSettings(settings);
   revalidateAll();
-  redirect("/admin/nosotras?ok=1");
+  return { ok: true };
 }
 
 /* ---------------------------- loteos CRUD ------------------------------ */
@@ -362,10 +379,12 @@ function parseLots(raw: FormDataEntryValue | null): Lot[] {
   return lots;
 }
 
-export async function saveLoteoAction(formData: FormData) {
+export async function saveLoteoAction(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string } | void> {
   await requireAdmin();
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) return;
+  if (!title) return { ok: false, error: "Falta el nombre del loteo." };
 
   const existingSlug = String(formData.get("slug") ?? "").trim();
   const store = await getStore();
@@ -395,7 +414,11 @@ export async function saveLoteoAction(formData: FormData) {
 
   await upsertLoteo(loteo);
   revalidateAll();
-  redirect("/admin/loteos");
+  const qs = new URLSearchParams({
+    ok: existingSlug ? "loteo-guardado" : "loteo-creado",
+    ver: `/lotes/${slug}`,
+  });
+  redirect(`/admin/loteos?${qs}`);
 }
 
 export async function deleteLoteoAction(formData: FormData) {
@@ -405,7 +428,7 @@ export async function deleteLoteoAction(formData: FormData) {
     await deleteLoteo(slug);
     revalidateAll();
   }
-  redirect("/admin/loteos");
+  redirect("/admin/loteos?ok=loteo-borrado");
 }
 
 /** Upload for non-property images (e.g. team photo, hero). */

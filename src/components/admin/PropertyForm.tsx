@@ -1,22 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   TYPE_LABELS,
   OPERATION_LABELS,
   propertyImages,
-  SALE_STATUSES,
   type Property,
   type SaleStatus,
   type Operation,
   type PropertyType,
 } from "@/lib/properties";
 import { savePropertyAction, geocodeAction } from "@/app/admin/actions";
+import PropertyCard from "@/components/PropertyCard";
 import TagInput from "./TagInput";
 import ImageManager from "./ImageManager";
 import LocationPicker from "./LocationPicker";
 import BoundaryPicker from "./BoundaryPicker";
+import AdminForm from "./AdminForm";
+import { AutoTextarea, Field, Panel, Segmented, Spinner, Switch } from "./ui";
 
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
@@ -34,22 +35,21 @@ function parseLatLng(s: string): [number, number] | null {
   return null;
 }
 
+const numOrUndef = (v: FormDataEntryValue | null) => {
+  const n = parseFloat(String(v ?? ""));
+  return Number.isFinite(n) ? n : undefined;
+};
+
 export default function PropertyForm({ property }: { property?: Property }) {
   const isEdit = !!property;
   const [images, setImages] = useState<string[]>(
     property ? propertyImages(property) : []
   );
   const [services, setServices] = useState<string[]>(property?.services ?? []);
-  const [amenities, setAmenities] = useState<string[]>(
-    property?.amenities ?? []
-  );
-  const [highlights, setHighlights] = useState<string[]>(
-    property?.highlights ?? []
-  );
+  const [amenities, setAmenities] = useState<string[]>(property?.amenities ?? []);
+  const [highlights, setHighlights] = useState<string[]>(property?.highlights ?? []);
   const [location, setLocation] = useState(property?.location ?? "");
-  const [coords, setCoords] = useState<[number, number] | undefined>(
-    property?.coords
-  );
+  const [coords, setCoords] = useState<[number, number] | undefined>(property?.coords);
   // Texto del campo combinado "lat, lng" (lo que pegás de Google Maps).
   const [coordsText, setCoordsText] = useState(
     property?.coords ? `${property.coords[0]}, ${property.coords[1]}` : ""
@@ -58,18 +58,19 @@ export default function PropertyForm({ property }: { property?: Property }) {
   const [coveredValue, setCoveredValue] = useState<number | undefined>(
     property?.coveredArea
   );
-  const [boundary, setBoundary] = useState<[number, number][]>(
-    property?.boundary ?? []
-  );
+  const [boundary, setBoundary] = useState<[number, number][]>(property?.boundary ?? []);
   // Borrador: se guarda pero no sale en la web. Propiedades ya cargadas
   // (sin el campo) siguen publicadas.
   const [draft, setDraft] = useState(property?.draft ?? false);
   const [status, setStatus] = useState<SaleStatus>(property?.status ?? "disponible");
+  const [featured, setFeatured] = useState(property?.featured ?? false);
   const [geoState, setGeoState] = useState<{
     loading: boolean;
     label?: string;
     error?: string;
   }>({ loading: false });
+  // Valores actuales del formulario, para la vista previa.
+  const [values, setValues] = useState<FormData | null>(null);
 
   // Setea las coords desde el mapa/geocoding y refleja el texto del campo.
   const updateCoords = (c: [number, number] | undefined) => {
@@ -89,8 +90,39 @@ export default function PropertyForm({ property }: { property?: Property }) {
     }
   };
 
+  const v = (k: string) => String(values?.get(k) ?? "").trim();
+  const previewProperty: Property = {
+    slug: property?.slug ?? "vista-previa",
+    title: v("title") || "Título de la propiedad",
+    operation: (v("operation") as Operation) || property?.operation || "venta",
+    type: (v("type") as PropertyType) || property?.type || "casa",
+    price: numOrUndef(values?.get("price") ?? null) ?? 0,
+    currency: "USD",
+    location: location || "Dirección",
+    zone: v("zone"),
+    city: v("city") || "San Rafael",
+    area: areaValue ?? 0,
+    coveredArea: coveredValue,
+    bedrooms: numOrUndef(values?.get("bedrooms") ?? null),
+    bathrooms: numOrUndef(values?.get("bathrooms") ?? null),
+    services: [],
+    amenities: [],
+    highlights: [],
+    image: images[0] ?? "",
+    images,
+    featured,
+    draft,
+    status,
+    description: "",
+  };
+
   return (
-    <form action={savePropertyAction} className="space-y-10">
+    <AdminForm
+      action={savePropertyAction}
+      submitLabel={isEdit ? "Guardar cambios" : "Crear propiedad"}
+      cancelHref="/admin/propiedades"
+      onValues={setValues}
+    >
       {isEdit && <input type="hidden" name="slug" value={property.slug} />}
       <input type="hidden" name="images" value={JSON.stringify(images)} />
       <input type="hidden" name="services" value={JSON.stringify(services)} />
@@ -103,376 +135,393 @@ export default function PropertyForm({ property }: { property?: Property }) {
           <input type="hidden" name="lng" value={coords[1]} />
         </>
       )}
-
       {draft && <input type="hidden" name="draft" value="on" />}
+      {featured && <input type="hidden" name="featured" value="on" />}
       <input type="hidden" name="status" value={status} />
 
-      {/* Estado de publicación */}
-      <section className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-eyebrow text-sage-600">Estado</p>
-          <p className="mt-1 text-sm text-ink-soft/75">
-            {draft
-              ? "En borrador: se guarda acá pero no aparece en la web."
-              : "Publicada: visible en la web pública."}
-          </p>
-        </div>
-        <div className="glass-segment">
-          {[
-            { v: false, label: "Publicada" },
-            { v: true, label: "Borrador" },
-          ].map((o) => (
-            <button
-              key={o.label}
-              type="button"
-              onClick={() => setDraft(o.v)}
-              aria-pressed={draft === o.v}
-              className={`glass-segment__btn ${
-                draft === o.v ? "is-active" : ""
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Estado comercial */}
-      <section className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-eyebrow text-sage-600">Disponibilidad</p>
-          <p className="mt-1 text-sm text-ink-soft/75">
-            {status === "disponible"
-              ? "Disponible para la venta o el alquiler."
-              : status === "reservada"
-                ? "Se muestra con la etiqueta \"Reservada\"."
-                : "Sigue publicada como \"Vendida\" (o \"Alquilada\"), al final del listado y fuera del mapa."}
-          </p>
-        </div>
-        <div className="glass-segment">
-          {SALE_STATUSES.map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setStatus(v)}
-              aria-pressed={status === v}
-              className={`glass-segment__btn ${status === v ? "is-active" : ""}`}
-            >
-              {v === "disponible" ? "Disponible" : v === "reservada" ? "Reservada" : "Vendida"}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <ImageManager value={images} onChange={setImages} />
-
-      {/* Basics */}
-      <section>
-        <div className="space-y-5">
-          <Field label="Título">
-            <input
-              name="title"
-              required
-              defaultValue={property?.title}
-              className="admin-input"
-              placeholder="Ej: Casa en Barrio Garbín"
-            />
-          </Field>
-          <div className="grid gap-5 sm:grid-cols-3">
-            <Field label="Operación">
-              <select
-                name="operation"
-                defaultValue={property?.operation ?? "venta"}
-                className="admin-input"
-              >
-                {OPERATIONS.map((o) => (
-                  <option key={o} value={o}>
-                    {OPERATION_LABELS[o]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Tipo">
-              <select
-                name="type"
-                defaultValue={property?.type ?? "casa"}
-                className="admin-input"
-              >
-                {TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {TYPE_LABELS[t]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Precio (US$)">
-              <input
-                name="price"
-                type="number"
-                min="0"
-                required
-                defaultValue={property?.price}
-                className="admin-input"
-              />
-            </Field>
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Sup. del terreno (m²)">
-              <input
-                name="area"
-                type="number"
-                min="0"
-                required
-                value={areaValue ?? ""}
-                onChange={(e) =>
-                  setAreaValue(
-                    e.target.value === "" ? undefined : Number(e.target.value)
-                  )
-                }
-                className="admin-input"
-                placeholder="Ej: 300"
-              />
-            </Field>
-            <Field label="Sup. cubierta (m²)">
-              <input
-                name="coveredArea"
-                type="number"
-                min="0"
-                value={coveredValue ?? ""}
-                onChange={(e) =>
-                  setCoveredValue(
-                    e.target.value === "" ? undefined : Number(e.target.value)
-                  )
-                }
-                className="admin-input"
-                placeholder="Opcional — Ej: 180"
-              />
-            </Field>
-          </div>
-          <div className="grid gap-5 sm:grid-cols-3">
-            <Field label="Dormitorios">
-              <input
-                name="bedrooms"
-                type="number"
-                min="0"
-                defaultValue={property?.bedrooms}
-                className="admin-input"
-                placeholder="—"
-              />
-            </Field>
-            <Field label="Baños">
-              <input
-                name="bathrooms"
-                type="number"
-                min="0"
-                defaultValue={property?.bathrooms}
-                className="admin-input"
-                placeholder="—"
-              />
-            </Field>
-            <Field label="Destacada">
-              <label className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
-                <input
-                  type="checkbox"
-                  name="featured"
-                  defaultChecked={property?.featured}
-                  className="h-4 w-4 accent-moss-600"
-                />
-                En portada
-              </label>
-            </Field>
-          </div>
-        </div>
-      </section>
-
-      {/* Location + geocoding */}
-      <section className="rounded-2xl border border-moss-600/10 bg-mint-50/30 p-6">
-        <span className="text-eyebrow text-sage-500">Ubicación</span>
-        <div className="mt-3 grid gap-5 sm:grid-cols-[1fr_auto]">
-          <input
-            name="location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="admin-input"
-            placeholder="Dirección: Ej: Libertad 1513, San Rafael"
-          />
-          <button
-            type="button"
-            onClick={onGeocode}
-            disabled={geoState.loading}
-            className="glass-btn-primary disabled:opacity-60"
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_330px]">
+        {/* ---------------- Columna principal ---------------- */}
+        <div className="min-w-0 space-y-4">
+          <Panel
+            title="Fotos"
+            description="La primera es la portada: es la que se ve en el listado y al compartir."
+            aside={
+              images.length > 0 ? (
+                <span className="text-xs text-ink-soft/55">
+                  {images.length} foto{images.length === 1 ? "" : "s"}
+                </span>
+              ) : null
+            }
           >
-            {geoState.loading ? "Buscando…" : "📍 Ubicar en el mapa"}
-          </button>
-        </div>
-        <div className="mt-3 grid gap-5 sm:grid-cols-2">
-          <Field label="Zona / Barrio (filtro)">
-            <input
-              name="zone"
-              defaultValue={property?.zone}
-              className="admin-input"
-              placeholder="Ej: Barrio SAT"
-            />
-          </Field>
-          <Field label="Ciudad">
-            <input
-              name="city"
-              defaultValue={property?.city ?? "San Rafael"}
-              className="admin-input"
-            />
-          </Field>
-        </div>
-        {coords && (
-          <p className="mt-3 text-sm text-moss-600">
-            ✓ Ubicada en el mapa ({coords[0].toFixed(4)}, {coords[1].toFixed(4)})
-            {geoState.label && (
-              <span className="text-ink-soft/60"> — {geoState.label}</span>
+            <ImageManager value={images} onChange={setImages} />
+          </Panel>
+
+          <Panel title="Datos principales">
+            <div className="space-y-5">
+              <Field label="Título">
+                <input
+                  name="title"
+                  required
+                  defaultValue={property?.title}
+                  className="admin-input"
+                  placeholder="Ej: Casa en Barrio Garbín"
+                  maxLength={110}
+                />
+              </Field>
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Field label="Operación">
+                  <select
+                    name="operation"
+                    defaultValue={property?.operation ?? "venta"}
+                    className="admin-input"
+                  >
+                    {OPERATIONS.map((o) => (
+                      <option key={o} value={o}>
+                        {OPERATION_LABELS[o]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Tipo">
+                  <select
+                    name="type"
+                    defaultValue={property?.type ?? "casa"}
+                    className="admin-input"
+                  >
+                    {TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {TYPE_LABELS[t]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Precio (US$)" hint="Vacío = «Consultar»">
+                  <input
+                    name="price"
+                    type="number"
+                    min="0"
+                    step="any"
+                    inputMode="numeric"
+                    defaultValue={property?.price || undefined}
+                    className="admin-input"
+                    placeholder="Ej: 120000"
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <Field label="Sup. del terreno (m²)">
+                  <input
+                    name="area"
+                    type="number"
+                    min="0"
+                    step="any"
+                    inputMode="decimal"
+                    required
+                    value={areaValue ?? ""}
+                    onChange={(e) =>
+                      setAreaValue(e.target.value === "" ? undefined : Number(e.target.value))
+                    }
+                    className="admin-input"
+                    placeholder="Ej: 300"
+                  />
+                </Field>
+                <Field label="Sup. cubierta (m²)">
+                  <input
+                    name="coveredArea"
+                    type="number"
+                    min="0"
+                    step="any"
+                    inputMode="decimal"
+                    value={coveredValue ?? ""}
+                    onChange={(e) =>
+                      setCoveredValue(e.target.value === "" ? undefined : Number(e.target.value))
+                    }
+                    className="admin-input"
+                    placeholder="Opcional"
+                  />
+                </Field>
+                <Field label="Dormitorios">
+                  <input
+                    name="bedrooms"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    defaultValue={property?.bedrooms}
+                    className="admin-input"
+                    placeholder="—"
+                  />
+                </Field>
+                <Field label="Baños">
+                  <input
+                    name="bathrooms"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    defaultValue={property?.bathrooms}
+                    className="admin-input"
+                    placeholder="—"
+                  />
+                </Field>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel
+            title="Ubicación"
+            description="Sin ubicación, la propiedad no aparece en el mapa de la web."
+            aside={
+              coords ? (
+                <span className="glass-chip">✓ En el mapa</span>
+              ) : (
+                <span className="glass-chip glass-chip--warn">Sin ubicar</span>
+              )
+            }
+          >
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <Field label="Dirección">
+                <input
+                  name="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Enter busca en el mapa (no guarda el formulario).
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void onGeocode();
+                    }
+                  }}
+                  className="admin-input"
+                  placeholder="Ej: Libertad 1513, San Rafael"
+                  enterKeyHint="search"
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={onGeocode}
+                disabled={geoState.loading || !location.trim()}
+                className="glass-btn justify-center py-[0.68rem]"
+              >
+                {geoState.loading ? (
+                  <>
+                    <Spinner /> Buscando…
+                  </>
+                ) : (
+                  "Buscar en el mapa"
+                )}
+              </button>
+            </div>
+            {geoState.error && (
+              <p className="mt-2 text-sm text-red-700">{geoState.error}</p>
             )}
-          </p>
-        )}
-        {geoState.error && (
-          <p className="mt-3 text-sm text-red-600">{geoState.error}</p>
-        )}
+            {geoState.label && !geoState.error && (
+              <p className="mt-2 text-xs text-ink-soft/60">
+                Encontrado: {geoState.label}. Si no es exacto, mové el pin.
+              </p>
+            )}
 
-        {/* Interactive picker — buscá por dirección y/o ajustá a mano */}
-        <div className="mt-4">
-          <LocationPicker coords={coords} onChange={updateCoords} />
-        </div>
+            <div className="mt-4">
+              <LocationPicker coords={coords} onChange={updateCoords} />
+            </div>
 
-        {/* Coordenadas: pegá el par de una (como copia Google Maps) */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <Field label="Coordenadas (lat, lng)">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={coordsText}
-              onChange={(e) => {
-                setCoordsText(e.target.value);
-                const parsed = parseLatLng(e.target.value);
-                if (parsed) setCoords(parsed);
-                else if (e.target.value.trim() === "") setCoords(undefined);
-              }}
-              className="admin-input"
-              placeholder="-34.6176, -68.3319"
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <Field label="Zona / barrio" hint="Se usa para filtrar en la web.">
+                <input
+                  name="zone"
+                  defaultValue={property?.zone}
+                  className="admin-input"
+                  placeholder="Ej: Barrio SAT"
+                />
+              </Field>
+              <Field label="Ciudad">
+                <input
+                  name="city"
+                  defaultValue={property?.city ?? "San Rafael"}
+                  className="admin-input"
+                />
+              </Field>
+            </div>
+
+            <details className="group mt-5 rounded-xl border border-moss-600/10 bg-white/30 px-4 py-3">
+              <summary className="cursor-pointer list-none text-sm text-ink-soft/75 marker:hidden">
+                <span className="inline-flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90" aria-hidden>
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                  Pegar coordenadas de Google Maps
+                </span>
+              </summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <Field
+                  label="Coordenadas (lat, lng)"
+                  hint="En Google Maps: clic derecho sobre el lugar y clic en los números."
+                >
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={coordsText}
+                    onChange={(e) => {
+                      setCoordsText(e.target.value);
+                      const parsed = parseLatLng(e.target.value);
+                      if (parsed) setCoords(parsed);
+                      else if (e.target.value.trim() === "") setCoords(undefined);
+                    }}
+                    className="admin-input font-mono text-sm"
+                    placeholder="-34.6176, -68.3319"
+                  />
+                </Field>
+                {coords && (
+                  <button
+                    type="button"
+                    onClick={() => updateCoords(undefined)}
+                    className="glass-btn mb-6 justify-center text-xs"
+                  >
+                    Quitar ubicación
+                  </button>
+                )}
+              </div>
+            </details>
+
+            {/* Contorno del lote — dibujar sobre el satélite (ideal para terrenos) */}
+            <div className="mt-6 border-t border-moss-600/10 pt-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="admin-label">Contorno del terreno (opcional)</span>
+                {boundary.length >= 3 ? (
+                  <span className="text-xs font-medium text-moss-600">
+                    ✓ Dibujado ({boundary.length} esquinas)
+                  </span>
+                ) : boundary.length > 0 ? (
+                  <span className="text-xs text-[#7a5310]">
+                    Faltan esquinas: mínimo 3
+                  </span>
+                ) : null}
+              </div>
+              <p className="mb-3 mt-1 text-xs leading-relaxed text-ink-soft/60">
+                Marcá los límites del terreno sobre la foto satelital: en la ficha
+                se ve exactamente lo que ocupa. Ideal para lotes y fincas.
+              </p>
+              {coords ? (
+                <BoundaryPicker
+                  center={coords}
+                  area={areaValue}
+                  boundary={boundary}
+                  onChange={setBoundary}
+                />
+              ) : (
+                <p className="rounded-xl border border-dashed border-moss-600/20 bg-white/30 px-4 py-6 text-center text-sm text-ink-soft/60">
+                  Primero ubicá la propiedad en el mapa de arriba.
+                </p>
+              )}
+            </div>
+          </Panel>
+
+          <Panel
+            title="Descripción"
+            description="Dejá una línea en blanco entre párrafos: en la web se respetan."
+          >
+            <AutoTextarea
+              name="description"
+              minRows={6}
+              required
+              defaultValue={property?.description}
+              className="leading-relaxed"
+              placeholder="Contá lo mejor de la propiedad: ambientes, entorno, estado…"
+              aria-label="Descripción"
             />
-          </Field>
-          {coords && (
-            <button
-              type="button"
-              onClick={() => updateCoords(undefined)}
-              className="mb-0.5 rounded-full border border-moss-600/20 px-4 py-2.5 text-sm text-ink-soft/70 transition-colors hover:bg-mint-100"
-            >
-              Quitar pin
-            </button>
-          )}
-        </div>
-        <p className="mt-2 text-xs text-ink-soft/60">
-          Pegá las dos coordenadas juntas desde Google Maps (ej.{" "}
-          <span className="font-mono">-34.6176, -68.3319</span>) o marcá el punto
-          en el mapa de arriba — se sincronizan.
-        </p>
+          </Panel>
 
-        {/* Contorno del lote — dibujar sobre el satélite (ideal para terrenos) */}
-        <div className="mt-6 border-t border-moss-600/10 pt-5">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-eyebrow text-sage-500">
-              Contorno del lote (opcional)
-            </span>
-            {boundary.length >= 3 ? (
-              <span className="text-xs font-medium text-moss-600">
-                ✓ {boundary.length} puntos dibujados
-              </span>
-            ) : boundary.length > 0 ? (
-              <span className="text-xs text-ink-soft/60">
-                {boundary.length} punto(s) — mínimo 3 para guardar
-              </span>
-            ) : null}
+          <Panel title="Características">
+            <div className="grid gap-6 md:grid-cols-3">
+              <TagInput
+                label="Servicios"
+                value={services}
+                onChange={setServices}
+                suggestions={["Luz", "Agua", "Gas", "Pozo", "Cloacas"]}
+              />
+              <TagInput
+                label="Amenities"
+                value={amenities}
+                onChange={setAmenities}
+                suggestions={["Piscina", "SUM", "Parrilla", "Seguridad 24hs"]}
+              />
+              <TagInput
+                label="Destacados"
+                value={highlights}
+                onChange={setHighlights}
+                placeholder="Ej: Piscina climatizada"
+              />
+            </div>
+          </Panel>
+        </div>
+
+        {/* ---------------- Columna lateral ---------------- */}
+        <aside className="order-first flex flex-col gap-4 lg:order-none">
+          <Panel title="Publicación">
+            <div className="space-y-5">
+              <div>
+                <Segmented
+                  full
+                  label="Visibilidad"
+                  value={draft}
+                  onChange={setDraft}
+                  options={[
+                    { value: false, label: "Publicada" },
+                    { value: true, label: "Borrador" },
+                  ]}
+                />
+                <p className="mt-2 text-xs leading-relaxed text-ink-soft/60">
+                  {draft
+                    ? "Se guarda acá pero no aparece en la web."
+                    : "Visible en la web al guardar."}
+                </p>
+              </div>
+
+              <div>
+                <span className="admin-label">Disponibilidad</span>
+                <div className="mt-2">
+                  <Segmented
+                    full
+                    label="Disponibilidad"
+                    value={status}
+                    onChange={setStatus}
+                    options={[
+                      { value: "disponible", label: "Disponible" },
+                      { value: "reservada", label: "Reservada" },
+                      { value: "vendida", label: "Vendida" },
+                    ]}
+                  />
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-ink-soft/60">
+                  {status === "disponible"
+                    ? "Se ofrece normalmente."
+                    : status === "reservada"
+                      ? "Lleva la etiqueta «Reservada»."
+                      : "Queda como antecedente: al final del listado y fuera del mapa."}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 border-t border-moss-600/10 pt-4">
+                <div>
+                  <p className="text-sm font-medium text-ink">Destacada en portada</p>
+                  <p className="mt-0.5 text-xs text-ink-soft/60">
+                    Aparece en la página de inicio.
+                  </p>
+                </div>
+                <Switch checked={featured} onChange={setFeatured} label="Destacada en portada" />
+              </div>
+            </div>
+          </Panel>
+
+          {/* Vista previa: la misma tarjeta que se ve en la web. */}
+          <div className="hidden flex-1 lg:block">
+            <div className="sticky top-6">
+              <p className="admin-label mb-3 px-1">Vista previa en la web</p>
+              <div className="glass-panel pointer-events-none p-4" aria-hidden>
+                <PropertyCard property={previewProperty} preview eager />
+              </div>
+            </div>
           </div>
-          <p className="mt-1 mb-3 text-xs text-ink-soft/60">
-            Dibujá los límites reales del terreno sobre la vista satelital. Se
-            muestran en la ficha de la propiedad. Ideal para lotes.
-          </p>
-          {coords ? (
-            <BoundaryPicker
-              center={coords}
-              area={areaValue}
-              boundary={boundary}
-              onChange={setBoundary}
-            />
-          ) : (
-            <p className="rounded-xl border border-dashed border-moss-600/20 bg-mint-50/40 px-4 py-6 text-center text-sm text-ink-soft/60">
-              Ubicá primero la propiedad en el mapa (arriba) para poder dibujar
-              el contorno del lote.
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Description */}
-      <Field label="Descripción">
-        <textarea
-          name="description"
-          rows={5}
-          required
-          defaultValue={property?.description}
-          className="admin-input resize-none"
-          placeholder="Descripción atractiva de la propiedad…"
-        />
-      </Field>
-
-      {/* Lists */}
-      <div className="grid gap-8 md:grid-cols-3">
-        <TagInput
-          label="Servicios"
-          value={services}
-          onChange={setServices}
-          suggestions={["Luz", "Agua", "Gas", "Pozo", "Cloacas"]}
-        />
-        <TagInput
-          label="Amenities"
-          value={amenities}
-          onChange={setAmenities}
-          suggestions={["Piscina", "SUM", "Parrilla", "Seguridad 24hs"]}
-        />
-        <TagInput
-          label="Destacados (highlights)"
-          value={highlights}
-          onChange={setHighlights}
-          placeholder="Ej: Piscina climatizada"
-        />
+        </aside>
       </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-4 border-t border-moss-600/10 pt-6">
-        <button
-          type="submit"
-          className="glass-btn-primary disabled:opacity-60"
-        >
-          {isEdit ? "Guardar cambios" : "Crear propiedad"}
-        </button>
-        <Link
-          href="/admin/propiedades"
-          className="text-sm text-ink-soft/70 hover:text-moss-600"
-        >
-          Cancelar
-        </Link>
-      </div>
-    </form>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="text-eyebrow text-sage-500">{label}</span>
-      <div className="mt-2">{children}</div>
-    </label>
+    </AdminForm>
   );
 }

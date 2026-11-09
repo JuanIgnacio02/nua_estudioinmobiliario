@@ -28,7 +28,10 @@
       "port": 3000,
       "env": {
         "SUPABASE_URL": "",
-        "SUPABASE_SERVICE_ROLE_KEY": ""
+        "SUPABASE_SERVICE_ROLE_KEY": "",
+        "CLOUDINARY_CLOUD_NAME": "",
+        "CLOUDINARY_API_KEY": "",
+        "CLOUDINARY_API_SECRET": ""
       }
     }
   ]

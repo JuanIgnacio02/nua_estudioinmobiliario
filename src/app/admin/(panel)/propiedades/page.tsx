@@ -10,7 +10,7 @@ export default async function AdminProperties() {
   const borradores = properties.filter((p) => p.draft).length;
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-10 md:px-10 md:py-14">
+    <div className="admin-page mx-auto max-w-5xl px-5 py-10 md:px-10 md:py-14">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-eyebrow text-sage-600">Contenido</p>

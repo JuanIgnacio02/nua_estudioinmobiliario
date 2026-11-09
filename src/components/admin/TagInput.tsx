@@ -25,18 +25,18 @@ export default function TagInput({
 
   return (
     <div>
-      <span className="text-eyebrow text-sage-500">{label}</span>
-      <div className="mt-2 flex flex-wrap gap-2 rounded-xl border border-moss-600/15 bg-white/60 p-2">
+      <span className="admin-label">{label}</span>
+      <div className="mt-2 flex min-h-[2.9rem] flex-wrap items-center gap-1.5 rounded-[0.85rem] border border-white/70 bg-white/55 p-1.5 shadow-[inset_0_1px_2px_rgba(36,41,15,0.05)] transition-shadow focus-within:border-celadon-400 focus-within:bg-white/85 focus-within:shadow-[0_0_0_4px_rgba(172,178,151,0.35)]">
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1.5 rounded-full bg-mint-100 py-1 pl-3 pr-1.5 text-sm text-moss-700"
+            className="inline-flex items-center gap-1 rounded-full bg-mint-100 py-1 pl-3 pr-1 text-sm text-moss-700"
           >
             {tag}
             <button
               type="button"
               onClick={() => onChange(value.filter((t) => t !== tag))}
-              className="flex h-4 w-4 items-center justify-center rounded-full text-moss-600 hover:bg-moss-600 hover:text-mint-50"
+              className="flex h-5 w-5 items-center justify-center rounded-full text-moss-600 transition-colors hover:bg-moss-600 hover:text-mint-50"
               aria-label={`Quitar ${tag}`}
             >
               ×
@@ -55,7 +55,9 @@ export default function TagInput({
             }
           }}
           onBlur={() => draft && add(draft)}
-          placeholder={placeholder ?? "Escribí y Enter…"}
+          placeholder={value.length ? "" : placeholder ?? "Escribí y Enter…"}
+          aria-label={label}
+          enterKeyHint="done"
           className="min-w-[8rem] flex-1 bg-transparent px-2 py-1 text-sm outline-none"
         />
       </div>
@@ -68,7 +70,7 @@ export default function TagInput({
                 key={s}
                 type="button"
                 onClick={() => add(s)}
-                className="rounded-full border border-moss-600/15 px-3 py-1 text-xs text-ink-soft transition-colors hover:bg-mint-100"
+                className="rounded-full border border-moss-600/15 bg-white/30 px-3 py-1 text-xs text-ink-soft transition-colors hover:bg-white/80 hover:text-moss-700"
               >
                 + {s}
               </button>

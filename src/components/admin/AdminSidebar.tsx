@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import { logout } from "@/app/admin/auth-actions";
 
@@ -35,20 +35,41 @@ export default function AdminSidebar() {
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
+  // Menú abierto en el celular: Esc lo cierra y la página de atrás no scrollea.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   return (
     <>
       {/* Mobile bar */}
-      <div className="glass-nav sticky top-0 z-50 flex h-14 items-center justify-between px-5 lg:hidden">
-        <Logo className="h-5 w-auto text-moss-700" />
+      <div className="glass-nav sticky top-0 z-50 flex h-14 items-center justify-between pl-5 pr-3 lg:hidden">
+        <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2.5">
+          <Logo className="h-5 w-auto text-moss-700" />
+          <span className="text-[10px] uppercase tracking-[0.2em] text-sage-600">Admin</span>
+        </Link>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="glass-btn px-4 py-1.5 text-sm"
+          aria-expanded={open}
+          aria-controls="admin-nav"
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-moss-700 transition-colors hover:bg-white/60"
         >
-          {open ? "Cerrar" : "Menú"}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+            {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </svg>
         </button>
       </div>
 
       <aside
+        id="admin-nav"
         className={`glass-nav ${
           open
             ? "fixed inset-x-0 bottom-0 top-14 z-40 block overflow-y-auto"
@@ -69,7 +90,8 @@ export default function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className={`glass-navitem flex items-center gap-3 px-3 py-2.5 text-sm ${
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={`glass-navitem flex items-center gap-3 px-3 py-3 text-[0.95rem] lg:py-2.5 lg:text-sm ${
                   isActive(item.href)
                     ? "is-active font-medium"
                     : "text-ink-soft/80 hover:text-moss-700"
