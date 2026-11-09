@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
+import { SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -17,7 +18,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://nuaestudioinmobiliario.com.ar"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "NÚA · Estudio Inmobiliario — Confianza que construye futuro",
     template: "%s · NÚA Estudio Inmobiliario",
