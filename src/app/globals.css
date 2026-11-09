@@ -925,3 +925,35 @@ select.admin-input {
     animation: none;
   }
 }
+
+/* Carruseles deslizables: sin barra de scroll visible. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Panel inferior (filtros en el celular) */
+.nua-sheet {
+  animation: nua-sheet-up 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nua-sheet-backdrop {
+  animation: nua-fade-in 0.3s ease-out;
+}
+@keyframes nua-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes nua-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nua-sheet,
+  .nua-sheet-backdrop {
+    animation: none;
+  }
+}

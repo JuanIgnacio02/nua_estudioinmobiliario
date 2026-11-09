@@ -49,8 +49,11 @@ export default function Contact({
             <div className="mt-12 space-y-8">
               <a href={`mailto:${CONTACT.email}`} className="group block">
                 <span className="text-eyebrow text-sage-400">Email</span>
-                <p className="mt-1 break-all font-display text-2xl text-ink transition-colors group-hover:text-moss-600 md:text-3xl">
-                  {CONTACT.email}
+                {/* Corta antes de la @ ("…inmobiliario / @gmail.com"), no en
+                    medio de una palabra como hacía break-all. */}
+                <p className="mt-1 font-display text-[1.35rem] leading-snug text-ink [overflow-wrap:anywhere] transition-colors group-hover:text-moss-600 sm:text-2xl md:text-3xl">
+                  {CONTACT.email.split("@")[0]}
+                  <wbr />@{CONTACT.email.split("@")[1]}
                 </p>
               </a>
               <a

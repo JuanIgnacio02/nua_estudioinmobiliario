@@ -159,39 +159,43 @@ export default function PropertyCard({
 
           <p className="mt-2 text-sm text-ink-soft/60">{property.location}</p>
 
-          <div className="mt-5 flex items-end justify-between gap-4 pt-1">
-            <div className="shrink-0 whitespace-nowrap">
-              {drop && (
-                <p className="text-xs text-ink-soft/50 line-through">
-                  {formatPrice({ ...property, price: drop.from })}
-                </p>
-              )}
+          <div className="mt-5 pt-1">
+            {drop && (
+              <p className="text-xs text-ink-soft/50 line-through">
+                {formatPrice({ ...property, price: drop.from })}
+              </p>
+            )}
+            {/* Si no entra en una línea, los datos bajan enteros debajo del
+                precio (antes quedaban puntos sueltos al principio del renglón). */}
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
               <p
-                className={`font-display text-2xl ${
+                className={`whitespace-nowrap font-display text-2xl ${
                   sold ? "text-ink-soft/45 line-through decoration-1" : "text-moss-600"
                 }`}
               >
                 {formatPrice(property)}
               </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-0.5 text-xs text-ink-soft/70">
-              {property.coveredArea != null && (
-                <span>{formatArea(property.coveredArea)} cub.</span>
-              )}
-              <span>
-                {formatArea(property.area)}
-                {property.coveredArea != null ? " terr." : ""}
-              </span>
-              {property.bedrooms != null && (
-                <span className="before:mr-3 before:text-sage-400 before:content-['·']">
-                  {plural(property.bedrooms, "dorm.", "dorm.")}
-                </span>
-              )}
-              {property.bathrooms != null && (
-                <span className="before:mr-3 before:text-sage-400 before:content-['·']">
-                  {plural(property.bathrooms, "baño", "baños")}
-                </span>
-              )}
+              <ul className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-ink-soft/75">
+                {property.coveredArea != null && (
+                  <Spec icon="house" label="Superficie cubierta">
+                    {formatArea(property.coveredArea)} cub.
+                  </Spec>
+                )}
+                <Spec icon="area" label="Superficie del terreno">
+                  {formatArea(property.area)}
+                  {property.coveredArea != null ? " terr." : ""}
+                </Spec>
+                {property.bedrooms != null && (
+                  <Spec icon="bed" label={plural(property.bedrooms, "dormitorio", "dormitorios")}>
+                    {property.bedrooms}
+                  </Spec>
+                )}
+                {property.bathrooms != null && (
+                  <Spec icon="bath" label={plural(property.bathrooms, "baño", "baños")}>
+                    {property.bathrooms}
+                  </Spec>
+                )}
+              </ul>
             </div>
           </div>
         </div>
@@ -214,4 +218,37 @@ function PreviewBox({
 }: React.HTMLAttributes<HTMLDivElement> & { href: string }) {
   void _href;
   return <div {...props} />;
+}
+
+const SPEC_ICONS: Record<"house" | "area" | "bed" | "bath", React.ReactNode> = {
+  house: <path d="M3 10.5 12 3l9 7.5M5 9v11h14V9" />,
+  area: <path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" />,
+  bed: <path d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 14h18M7 9V6h4v3M3 18v2M21 18v2" />,
+  bath: <path d="M4 12h16v3a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-3ZM6 12V5a2 2 0 0 1 3.4-1.4M7 20l-1 2M17 20l1 2" />,
+};
+
+/** Dato de la tarjeta con su ícono; el texto completo queda para lectores de pantalla. */
+function Spec({
+  icon,
+  label,
+  children,
+}: {
+  icon: keyof typeof SPEC_ICONS;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-center gap-1.5 whitespace-nowrap" title={label}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-sage-500" aria-hidden>
+        {SPEC_ICONS[icon]}
+      </svg>
+      <span>
+        {children}
+        {/* "4" + " dormitorios": el número ya está a la vista. */}
+        {(icon === "bed" || icon === "bath") && (
+          <span className="sr-only"> {label.replace(/^\d+\s*/, "")}</span>
+        )}
+      </span>
+    </li>
+  );
 }

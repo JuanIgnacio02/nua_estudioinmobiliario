@@ -36,6 +36,7 @@ export default function MapExplorer({
   const active = hovered ?? pinned;
   const [cat, setCat] = useState<"todos" | "lote" | "propiedad">("todos");
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const listRef = useRef<HTMLDivElement>(null);
 
   // El mapa (Leaflet + tiles) se monta recién cuando el visitante se acerca:
   // queda lejos del primer pantallazo y no tiene sentido cargarlo de entrada.
@@ -76,13 +77,21 @@ export default function MapExplorer({
     return base;
   }, [base, cat]);
 
-  // Scroll the list to the item pinned from the map (not on mere hover).
+  // Lleva la lista hasta el elegido en el mapa (no en un simple hover). La
+  // lista es `relative`, así que offsetLeft/Top ya son relativos a ella.
+  // Se mueve solo la lista: scrollIntoView movía también la página y en el
+  // celular el mapa se iba de la pantalla.
   useEffect(() => {
     if (!pinned) return;
-    itemRefs.current[pinned]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-    });
+    const box = listRef.current;
+    const item = itemRefs.current[pinned];
+    if (!box || !item) return;
+    const horizontal = box.scrollWidth > box.clientWidth + 4;
+    box.scrollTo(
+      horizontal
+        ? { left: item.offsetLeft - 20, behavior: "smooth" }
+        : { top: item.offsetTop - 8, behavior: "smooth" }
+    );
   }, [pinned]);
 
   // Ignore an active selection that the current filter hides.
@@ -150,9 +159,12 @@ export default function MapExplorer({
           {/* List */}
           {/* data-lenis-prevent: la lista tiene scroll propio; sin esto Lenis se
               queda con la rueda y mueve la página en lugar de la lista. */}
+          {/* Celular: tarjetas que se deslizan de costado debajo del mapa (antes
+              era una lista con scroll propio dentro de la página). */}
           <div
+            ref={listRef}
             data-lenis-prevent
-            className="order-2 flex max-h-[70vh] min-h-[460px] flex-col gap-2 overflow-y-auto overscroll-contain pr-1 lg:order-1"
+            className="no-scrollbar relative order-2 -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-5 px-5 pb-1 md:-mx-10 md:scroll-px-10 md:px-10 lg:order-1 lg:mx-0 lg:max-h-[70vh] lg:min-h-[460px] lg:snap-none lg:flex-col lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:overscroll-contain lg:px-0 lg:pb-0 lg:pr-1"
           >
             {list.map((p) => {
               const isActive = active === p.slug;
@@ -169,7 +181,7 @@ export default function MapExplorer({
                   onClick={() =>
                     setPinned((prev) => (prev === p.slug ? null : p.slug))
                   }
-                  className={`group flex gap-4 rounded-2xl border p-3 text-left transition-all duration-300 ${
+                  className={`group flex w-[84%] shrink-0 snap-start gap-4 rounded-2xl border p-3 text-left transition-all duration-300 sm:w-[60%] lg:w-auto ${
                     isActive
                       ? "border-moss-600/30 bg-mint-100 shadow-[0_10px_30px_-18px_rgba(36,41,15,0.6)]"
                       : "border-transparent bg-bone-dark/40 hover:bg-mint-100/60"
@@ -210,7 +222,7 @@ export default function MapExplorer({
             {showAllLink && (
               <Link
                 href="/propiedades"
-                className="mt-1 rounded-2xl border border-dashed border-moss-600/25 px-4 py-3 text-center text-sm text-moss-600 transition-colors hover:bg-mint-100/50"
+                className="flex shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-moss-600/25 px-6 py-3 text-center text-sm text-moss-600 transition-colors hover:bg-mint-100/50 lg:mt-1"
               >
                 Ver todas las propiedades →
               </Link>
@@ -220,7 +232,7 @@ export default function MapExplorer({
           {/* Map */}
           <div
             ref={mapBox}
-            className="order-1 h-[70vh] min-h-[460px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(36,41,15,0.35)] lg:order-2"
+            className="order-1 h-[52vh] min-h-[340px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(36,41,15,0.35)] lg:order-2 lg:h-[70vh] lg:min-h-[460px]"
           >
             {showMap ? (
               <PropertiesMap

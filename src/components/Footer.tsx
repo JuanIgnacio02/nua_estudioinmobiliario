@@ -16,8 +16,10 @@ export default function Footer({
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 pt-24 pb-10 md:px-10">
-        <div className="grid gap-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div className="max-w-xs">
+        {/* Celular: las dos listas de links lado a lado (el pie medía casi
+            dos pantallas). */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-14">
+          <div className="col-span-2 max-w-xs md:col-span-1">
             <p className="font-display text-3xl leading-tight text-moss-900">
               Construimos confianza.
               <br />
@@ -49,7 +51,7 @@ export default function Footer({
             ]}
           />
 
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h2 className="text-eyebrow font-sans leading-normal text-moss-700">Contacto</h2>
             <ul className="mt-5 space-y-3 text-sm">
               <li>
