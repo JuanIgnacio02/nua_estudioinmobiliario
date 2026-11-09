@@ -14,6 +14,7 @@ import {
   deleteLoteo,
 } from "@/lib/store";
 import { cloudinaryEnabled, uploadToCloudinary } from "@/lib/cloudinary";
+import { requireAdmin } from "@/lib/admin-session";
 import type {
   Property,
   Operation,
@@ -53,6 +54,7 @@ function revalidateAll() {
 export async function uploadImageAction(
   formData: FormData
 ): Promise<{ ok: boolean; image?: string; error?: string }> {
+  await requireAdmin();
   try {
     const file = formData.get("file") as File | null;
     if (!file || file.size === 0) return { ok: false, error: "Sin archivo" };
@@ -104,6 +106,7 @@ export async function uploadImageAction(
 export async function geocodeAction(
   address: string
 ): Promise<{ ok: boolean; coords?: [number, number]; label?: string; error?: string }> {
+  await requireAdmin();
   try {
     const q = encodeURIComponent(`${address}, Mendoza, Argentina`);
     const res = await fetch(
@@ -178,6 +181,7 @@ function parseBoundary(
 }
 
 export async function savePropertyAction(formData: FormData) {
+  await requireAdmin();
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
@@ -234,6 +238,7 @@ export async function savePropertyAction(formData: FormData) {
 }
 
 export async function deletePropertyAction(formData: FormData) {
+  await requireAdmin();
   const slug = String(formData.get("slug") ?? "");
   if (slug) {
     await deleteProperty(slug);
@@ -245,6 +250,7 @@ export async function deletePropertyAction(formData: FormData) {
 /* ------------------------- site settings -------------------------- */
 
 export async function saveContactAction(formData: FormData) {
+  await requireAdmin();
   const store = await getStore();
   const settings: SiteSettings = {
     ...store.settings,
@@ -262,6 +268,7 @@ export async function saveContactAction(formData: FormData) {
 }
 
 export async function saveAboutAction(formData: FormData) {
+  await requireAdmin();
   const store = await getStore();
   const settings: SiteSettings = {
     ...store.settings,
@@ -336,6 +343,7 @@ function parseLots(raw: FormDataEntryValue | null): Lot[] {
 }
 
 export async function saveLoteoAction(formData: FormData) {
+  await requireAdmin();
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
@@ -371,6 +379,7 @@ export async function saveLoteoAction(formData: FormData) {
 }
 
 export async function deleteLoteoAction(formData: FormData) {
+  await requireAdmin();
   const slug = String(formData.get("slug") ?? "");
   if (slug) {
     await deleteLoteo(slug);
@@ -383,6 +392,7 @@ export async function deleteLoteoAction(formData: FormData) {
 export async function uploadGenericImageAction(
   formData: FormData
 ): Promise<{ ok: boolean; image?: string; error?: string }> {
+  await requireAdmin();
   try {
     const file = formData.get("file") as File | null;
     if (!file || file.size === 0) return { ok: false, error: "Sin archivo" };

@@ -11,19 +11,28 @@ export async function login(
   const pw = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/admin");
 
-  if (!checkPassword(pw)) {
+  const token = await adminToken();
+  if (!token) {
+    return { error: "El acceso al panel no está configurado en el servidor." };
+  }
+
+  if (!(await checkPassword(pw))) {
+    // Demora fija ante un error: vuelve impráctico probar contraseñas en masa.
+    await new Promise((r) => setTimeout(r, 900));
     return { error: "Contraseña incorrecta. Intentá de nuevo." };
   }
 
   const c = await cookies();
-  c.set(ADMIN_COOKIE, adminToken(), {
+  c.set(ADMIN_COOKIE, token, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30, // 30 días
   });
 
-  redirect(next.startsWith("/admin") ? next : "/admin");
+  // Solo rutas internas del admin: evita usar el login como redirección abierta.
+  redirect(next.startsWith("/admin") && !next.startsWith("//") ? next : "/admin");
 }
 
 export async function logout() {
