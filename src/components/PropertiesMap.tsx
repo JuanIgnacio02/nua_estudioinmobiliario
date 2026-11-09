@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import StreetTiles from "@/components/StreetTiles";
 import { formatPrice, TYPE_LABELS, type Property } from "@/lib/properties";
 
 type Pin = { property: Property; pos: [number, number] };
@@ -155,10 +156,7 @@ export default function PropertiesMap({
       style={{ height: "100%", width: "100%" }}
       className="h-full w-full"
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-      />
+      <StreetTiles />
       <WheelZoom onHint={setHint} />
       <FlyController
         activeSlug={activeSlug}

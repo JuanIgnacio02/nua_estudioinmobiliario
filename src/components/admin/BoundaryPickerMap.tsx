@@ -1,17 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Polyline,
-  Marker,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+import { MapContainer, Polygon, Polyline, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import StreetTiles from "@/components/StreetTiles";
 import SatelliteTiles, { SAT_MAX_ZOOM } from "@/components/SatelliteTiles";
 
 type LatLng = [number, number];
@@ -132,12 +125,7 @@ export default function BoundaryPickerMap({
         {view === "sat" ? (
           <SatelliteTiles />
         ) : (
-          <TileLayer
-            attribution="&copy; CARTO"
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            maxNativeZoom={19}
-            maxZoom={SAT_MAX_ZOOM}
-          />
+          <StreetTiles />
         )}
 
         <ClickToAdd onAdd={addVertex} />

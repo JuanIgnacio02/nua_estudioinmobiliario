@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Polygon, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, Polygon, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import StreetTiles from "@/components/StreetTiles";
 import SatelliteTiles, { SAT_MAX_ZOOM } from "@/components/SatelliteTiles";
 import {
   LOT_STATUS_COLORS,
@@ -12,7 +13,10 @@ import {
   type Loteo,
   type Lot,
 } from "@/lib/loteos";
-import { formatArea } from "@/lib/properties";
+import {
+  formatArea,
+  plural,
+} from "@/lib/properties";
 
 /* ------------------------------------------------------------------ *
  * Master plan interactivo de un loteo.
@@ -76,7 +80,7 @@ export default function LoteoMasterPlan({
 
   const wa = (lot: Lot) =>
     `https://wa.me/${phoneHref}?text=${encodeURIComponent(
-      `Hola! Me interesa el lote ${lot.number} del ${loteo.title} (${formatArea(
+      `¡Hola! Me interesa el lote ${lot.number} del ${loteo.title} (${formatArea(
         lot.area
       )}). ¿Me pasan más info?`
     )}`;
@@ -94,12 +98,7 @@ export default function LoteoMasterPlan({
         {view === "sat" ? (
           <SatelliteTiles />
         ) : (
-          <TileLayer
-            attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            maxNativeZoom={19}
-            maxZoom={SAT_MAX_ZOOM}
-          />
+          <StreetTiles />
         )}
 
         {loteo.lots.map((lot, i) => {
@@ -168,9 +167,9 @@ export default function LoteoMasterPlan({
 
       {/* Leyenda + conteo. En mobile se omite el titular (ya está en la página)
           para que no choque con el toggle Satélite/Mapa. */}
-      <div className="absolute left-3 top-3 z-[1000] rounded-2xl border border-white/50 bg-white/92 px-3 py-2.5 text-xs shadow-md backdrop-blur sm:px-4 sm:py-3">
+      <div className="absolute left-14 top-3 z-[1000] rounded-2xl border border-white/50 bg-white/92 px-3 py-2.5 text-xs shadow-md backdrop-blur sm:px-4 sm:py-3">
         <p className="mb-2 hidden font-semibold text-ink sm:block">
-          {stats.total} lotes
+          {plural(stats.total, "lote", "lotes")}
           {stats.desde
             ? ` · desde US$ ${stats.desde.toLocaleString("es-AR")}`
             : ""}

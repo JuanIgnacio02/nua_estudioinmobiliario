@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import StreetTiles from "@/components/StreetTiles";
 
 const pinIcon = L.divIcon({
   className: "nua-pick-pin",
@@ -51,10 +52,7 @@ export default function LocationPickerMap({
       scrollWheelZoom={false}
       style={{ height: "100%", width: "100%" }}
     >
-      <TileLayer
-        attribution='&copy; OpenStreetMap &copy; CARTO'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-      />
+      <StreetTiles />
       <ClickToPlace onChange={onChange} />
       <Recenter coords={coords} />
       {coords && (
