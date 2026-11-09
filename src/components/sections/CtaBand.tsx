@@ -8,7 +8,7 @@ export default function CtaBand() {
       <div className="mx-auto max-w-[1600px] px-5 md:px-10">
         <div className="relative overflow-hidden rounded-[2rem] bg-celadon-400 px-8 py-20 text-center md:px-16 md:py-32">
           {/* Decorative NÚA wordmark backdrop */}
-          <div className="pointer-events-none absolute -bottom-[22%] left-1/2 w-[135%] -translate-x-1/2 text-moss-900/[0.06]">
+          <div aria-hidden className="pointer-events-none absolute -bottom-[22%] left-1/2 w-[135%] -translate-x-1/2 text-moss-900/[0.06]">
             <Logo className="h-auto w-full" />
           </div>
 

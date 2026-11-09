@@ -4,6 +4,8 @@ import Footer from "@/components/Footer";
 import Contact from "@/components/sections/Contact";
 import AnimatedHeading from "@/components/anim/AnimatedHeading";
 import { getStore } from "@/lib/store";
+import JsonLd from "@/components/JsonLd";
+import { agencyJsonLd } from "@/lib/seo";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
 // purga la caché, así que los cambios se ven al instante igual.
@@ -19,6 +21,7 @@ export default async function ContactoPage() {
   const { settings } = await getStore();
   return (
     <>
+      <JsonLd data={agencyJsonLd(settings.contact)} />
       <Navbar contact={settings.contact} />
       <main>
         <header className="bg-celadon-400 px-5 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-48">

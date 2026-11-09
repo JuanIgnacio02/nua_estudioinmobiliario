@@ -30,7 +30,7 @@ export default async function PropiedadesPage() {
         {/* Page header */}
         <header className="relative overflow-hidden bg-celadon-400 px-6 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-44">
           {/* Decorative NÚA wordmark backdrop */}
-          <div className="pointer-events-none absolute -bottom-[35%] -right-[4%] w-[55%] text-moss-900/[0.05] md:w-[40%]">
+          <div aria-hidden className="pointer-events-none absolute -bottom-[35%] -right-[4%] w-[55%] text-moss-900/[0.05] md:w-[40%]">
             <Logo className="h-auto w-full" />
           </div>
           <div className="relative mx-auto max-w-7xl">
@@ -51,10 +51,14 @@ export default async function PropiedadesPage() {
         </header>
 
         <div className="-mt-8">
-          <PropertyExplorer properties={properties} zones={zones} />
+          <PropertyExplorer
+            properties={properties}
+            zones={zones}
+            phoneHref={settings.contact.phoneHref}
+          />
         </div>
 
-        <MapExplorer properties={properties} />
+        <MapExplorer properties={properties} showAllLink={false} />
       </main>
       <Footer contact={settings.contact} />
     </>

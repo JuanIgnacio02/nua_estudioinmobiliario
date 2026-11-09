@@ -52,6 +52,9 @@ export default function RootLayout({
       className={`${inter.variable} ${fraunces.variable} antialiased`}
     >
       <body className="min-h-screen">
+        <noscript>
+          <style>{`[data-anim-immediate] [data-word]{transform:none!important;animation:none!important}`}</style>
+        </noscript>
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>

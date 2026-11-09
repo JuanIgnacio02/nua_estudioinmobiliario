@@ -11,7 +11,7 @@ export default function Footer({
   return (
     <footer className="relative overflow-hidden bg-celadon-400 text-moss-900">
       {/* Oversized wordmark backdrop */}
-      <div className="pointer-events-none absolute -bottom-[8%] left-1/2 w-[120%] -translate-x-1/2 text-moss-900/10">
+      <div aria-hidden className="pointer-events-none absolute -bottom-[8%] left-1/2 w-[120%] -translate-x-1/2 text-moss-900/10">
         <Logo className="h-auto w-full" />
       </div>
 
@@ -31,11 +31,11 @@ export default function Footer({
           <FooterCol
             title="Propiedades"
             items={[
-              ["Casas", "/propiedades?type=casa"],
-              ["Departamentos", "/propiedades?type=departamento"],
-              ["Terrenos / Lotes", "/propiedades?type=terreno"],
-              ["Fincas", "/propiedades?type=finca"],
-              ["Complejo de cabañas", "/propiedades?type=cabanas"],
+              ["Casas", "/propiedades?tipo=casa"],
+              ["Departamentos", "/propiedades?tipo=departamento"],
+              ["Terrenos / Lotes", "/propiedades?tipo=terreno"],
+              ["Fincas", "/propiedades?tipo=finca"],
+              ["Complejo de cabañas", "/propiedades?tipo=cabanas"],
             ]}
           />
           <FooterCol
@@ -50,7 +50,7 @@ export default function Footer({
           />
 
           <div>
-            <h4 className="text-eyebrow text-moss-700">Contacto</h4>
+            <h2 className="text-eyebrow font-sans leading-normal text-moss-700">Contacto</h2>
             <ul className="mt-5 space-y-3 text-sm">
               <li>
                 <a
@@ -82,6 +82,9 @@ export default function Footer({
               derechos reservados.
             </span>
           </div>
+          <Link href="/privacidad" className="transition-colors hover:text-moss-900">
+            Política de privacidad
+          </Link>
         </div>
       </div>
     </footer>
@@ -97,7 +100,7 @@ function FooterCol({
 }) {
   return (
     <div>
-      <h4 className="text-eyebrow text-moss-700">{title}</h4>
+      <h2 className="text-eyebrow font-sans leading-normal text-moss-700">{title}</h2>
       <ul className="mt-5 space-y-3 text-sm">
         {items.map(([label, href]) => (
           <li key={label}>

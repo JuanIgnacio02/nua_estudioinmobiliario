@@ -10,6 +10,8 @@ import {
   TYPE_LABELS,
   OPERATION_LABELS,
   plural,
+  saleStatus,
+  saleStatusLabel,
 } from "@/lib/properties";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
 
@@ -24,6 +26,8 @@ export default function PropertyCard({
   eager?: boolean;
 }) {
   const imgRef = useRef<HTMLDivElement>(null);
+  const status = saleStatus(property);
+  const sold = status === "vendida";
 
   const onEnter = () => {
     if (prefersReducedMotion()) return;
@@ -50,9 +54,19 @@ export default function PropertyCard({
             fill
             loading={eager ? "eager" : "lazy"}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
+            className={`object-cover ${sold ? "grayscale-[60%]" : ""}`}
           />
         </div>
+
+        {status !== "disponible" && (
+          <span
+            className={`absolute bottom-4 left-4 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-sm ${
+              sold ? "bg-ink/85 text-mint-50" : "bg-[#d9a441] text-moss-900"
+            }`}
+          >
+            {saleStatusLabel(property)}
+          </span>
+        )}
 
         {/* Top meta row */}
         <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
@@ -93,7 +107,11 @@ export default function PropertyCard({
         <p className="mt-2 text-sm text-ink-soft/60">{property.location}</p>
 
         <div className="mt-5 flex items-end justify-between gap-4 pt-1">
-          <p className="font-display text-2xl text-moss-600">
+          <p
+            className={`font-display text-2xl ${
+              sold ? "text-ink-soft/45 line-through decoration-1" : "text-moss-600"
+            }`}
+          >
             {formatPrice(property)}
           </p>
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-0.5 text-xs text-ink-soft/70">

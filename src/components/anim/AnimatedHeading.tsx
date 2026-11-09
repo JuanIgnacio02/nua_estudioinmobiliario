@@ -38,8 +38,9 @@ export default function AnimatedHeading({
     }
 
     const ctx = gsap.context(() => {
-      gsap.set(inners, { yPercent: 115 });
-      gsap.to(inners, {
+      // fromTo con y:0 explícito: los títulos "immediate" ya vienen ocultos
+      // por CSS (translateY), y sin esto GSAP sumaba ese desplazamiento al suyo.
+      gsap.fromTo(inners, { y: 0, yPercent: 115 }, {
         yPercent: 0,
         duration: 1.15,
         ease: "power4.out",
@@ -55,7 +56,12 @@ export default function AnimatedHeading({
   }, [immediate, delay, text]);
 
   return (
-    <Tag ref={ref} className={className}>
+    <Tag
+      ref={ref}
+      className={className}
+      // Ocultos desde el primer pintado (globals.css) para que no parpadeen.
+      data-anim-immediate={immediate ? "" : undefined}
+    >
       {words.map((word, i) => (
         <span
           key={i}

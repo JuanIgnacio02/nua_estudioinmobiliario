@@ -10,14 +10,11 @@ import {
   useIsomorphicLayoutEffect,
   prefersReducedMotion,
 } from "@/lib/gsap";
-import { defaultSettings, type SiteSettings } from "@/lib/properties";
-
-const VALUES = [
-  { n: "01", t: "Cercanía", d: "Escucha atenta en cada etapa del proceso." },
-  { n: "02", t: "Transparencia", d: "Información clara para decidir con seguridad." },
-  { n: "03", t: "Compromiso", d: "Energía puesta en cada operación." },
-  { n: "04", t: "Acompañamiento", d: "Detrás de cada venta hay una historia." },
-];
+import {
+  defaultSettings,
+  pillarText,
+  type SiteSettings,
+} from "@/lib/properties";
 
 export default function About({
   about = defaultSettings.about,
@@ -26,6 +23,13 @@ export default function About({
 }) {
   const img = useRef<HTMLDivElement>(null);
   const PILLARS = about.pillars;
+  // Las tarjetas de abajo son los mismos pilares de arriba (editables en el
+  // admin); antes eran cuatro valores fijos que no coincidían con ellos.
+  const VALUES = PILLARS.map((t, i) => ({
+    n: String(i + 1).padStart(2, "0"),
+    t,
+    d: pillarText(about, t),
+  }));
 
   useIsomorphicLayoutEffect(() => {
     if (prefersReducedMotion()) return;
@@ -57,7 +61,7 @@ export default function About({
       className="relative overflow-hidden bg-celadon-400 pb-24 pt-28 text-moss-900 md:pb-32 md:pt-32"
     >
       {/* Decorative NÚA wordmark backdrop */}
-      <div className="pointer-events-none absolute -right-[12%] top-[6%] w-[70%] text-moss-900/[0.05] md:-right-[6%] md:w-[48%]">
+      <div aria-hidden className="pointer-events-none absolute -right-[12%] top-[6%] w-[70%] text-moss-900/[0.05] md:-right-[6%] md:w-[48%]">
         <Logo className="h-auto w-full" />
       </div>
 

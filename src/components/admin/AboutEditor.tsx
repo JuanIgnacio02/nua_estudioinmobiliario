@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { SiteSettings } from "@/lib/properties";
 import { saveAboutAction, uploadGenericImageAction } from "@/app/admin/actions";
+import { pillarText } from "@/lib/properties";
 import TagInput from "./TagInput";
 
 export default function AboutEditor({
@@ -17,6 +18,9 @@ export default function AboutEditor({
     about.paragraphs.length ? about.paragraphs : [""]
   );
   const [pillars, setPillars] = useState<string[]>(about.pillars);
+  const [pillarTexts, setPillarTexts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(about.pillars.map((p) => [p, pillarText(about, p)]))
+  );
 
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,6 +43,13 @@ export default function AboutEditor({
         value={JSON.stringify(paragraphs.filter((p) => p.trim()))}
       />
       <input type="hidden" name="pillars" value={JSON.stringify(pillars)} />
+      <input
+        type="hidden"
+        name="pillarTexts"
+        value={JSON.stringify(
+          Object.fromEntries(pillars.map((p) => [p, pillarTexts[p] ?? ""]))
+        )}
+      />
 
       <section className="grid gap-8 lg:grid-cols-[240px_1fr]">
         <div>
@@ -111,6 +122,27 @@ export default function AboutEditor({
             onChange={setPillars}
             suggestions={["Cercanía", "Energía", "Compromiso", "Acompañamiento"]}
           />
+
+          {pillars.length > 0 && (
+            <div className="space-y-3">
+              <span className="text-eyebrow text-sage-500">
+                Descripción de cada pilar (tarjetas de /nosotras)
+              </span>
+              {pillars.map((p) => (
+                <label key={p} className="block">
+                  <span className="text-sm font-medium text-ink">{p}</span>
+                  <input
+                    value={pillarTexts[p] ?? ""}
+                    onChange={(e) =>
+                      setPillarTexts((prev) => ({ ...prev, [p]: e.target.value }))
+                    }
+                    className="admin-input mt-1"
+                    placeholder="Una frase corta"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

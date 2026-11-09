@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import {
+  saleRank,
   TYPE_LABELS,
   OPERATION_LABELS,
   type Operation,
@@ -13,38 +14,74 @@ import PropertyCard from "@/components/PropertyCard";
 type SortKey = "featured" | "price-asc" | "price-desc" | "area-desc";
 
 const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
-
-/** La URL no cambia sin recargar, así que no hay a qué suscribirse. */
-const subscribeToNothing = () => () => {};
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
+const SORTS: SortKey[] = ["featured", "price-asc", "price-desc", "area-desc"];
+
+/*
+ * Los filtros viven en la URL (?tipo=terreno&operacion=venta&zona=...&orden=...):
+ * - al volver de una ficha con "Atrás" siguen aplicados;
+ * - una búsqueda se puede compartir por WhatsApp tal cual.
+ * Se escribe con history.replaceState (no agrega entradas al historial ni
+ * recarga) y se lee con useSyncExternalStore: en el servidor no hay filtros,
+ * así el HTML trae el listado completo para Google y la página se cachea.
+ */
+const URL_CHANGE = "nua:filters";
+
+function subscribe(onChange: () => void) {
+  window.addEventListener(URL_CHANGE, onChange);
+  window.addEventListener("popstate", onChange);
+  return () => {
+    window.removeEventListener(URL_CHANGE, onChange);
+    window.removeEventListener("popstate", onChange);
+  };
+}
+
+function writeParams(changes: Record<string, string | null>) {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("type"); // nombre viejo (links del footer)
+  for (const [k, v] of Object.entries(changes)) {
+    if (v === null) url.searchParams.delete(k);
+    else url.searchParams.set(k, v);
+  }
+  window.history.replaceState(window.history.state, "", url);
+  window.dispatchEvent(new Event(URL_CHANGE));
+}
 
 export default function PropertyExplorer({
   properties,
   zones,
+  phoneHref,
 }: {
   properties: Property[];
   zones: string[];
+  /** WhatsApp del admin, para ofrecer contacto cuando no hay resultados. */
+  phoneHref?: string;
 }) {
-  const [operation, setOperation] = useState<Operation | "all">("all");
-  const [type, setType] = useState<PropertyType | "all" | null>(null);
-  const [zone, setZone] = useState<string>("all");
-  const [sort, setSort] = useState<SortKey>("featured");
-
-  // El ?type= se lee del navegador, no en el servidor: así la página se
-  // pre-genera con el listado completo (Google lo ve) y sigue siendo cacheable.
-  // useSyncExternalStore es la API de React para esto: en el servidor devuelve
-  // null y en el cliente el valor real, sin romper la hidratación.
-  const urlType = useSyncExternalStore(
-    subscribeToNothing,
-    () => new URLSearchParams(window.location.search).get("type"),
-    () => null
+  const search = useSyncExternalStore(
+    subscribe,
+    () => window.location.search,
+    () => ""
   );
+  const params = new URLSearchParams(search);
 
-  // Lo que elige el usuario manda (incluido "Todos"); si todavía no tocó el
-  // filtro, vale el de la URL.
+  const rawType = params.get("tipo") ?? params.get("type");
   const effectiveType: PropertyType | "all" =
-    type ??
-    (urlType && urlType in TYPE_LABELS ? (urlType as PropertyType) : "all");
+    rawType && rawType in TYPE_LABELS ? (rawType as PropertyType) : "all";
+  const rawOp = params.get("operacion");
+  const operation: Operation | "all" =
+    rawOp && rawOp in OPERATION_LABELS ? (rawOp as Operation) : "all";
+  const rawZone = params.get("zona");
+  const zone = rawZone && zones.includes(rawZone) ? rawZone : "all";
+  const rawSort = params.get("orden") as SortKey | null;
+  const sort: SortKey = rawSort && SORTS.includes(rawSort) ? rawSort : "featured";
+
+  const setOperation = (v: Operation | "all") =>
+    writeParams({ operacion: v === "all" ? null : v });
+  const setType = (v: PropertyType | "all") =>
+    writeParams({ tipo: v === "all" ? null : v });
+  const setZone = (v: string) => writeParams({ zona: v === "all" ? null : v });
+  const setSort = (v: SortKey) =>
+    writeParams({ orden: v === "featured" ? null : v });
 
   const results = useMemo(() => {
     let list = properties.filter((p) => {
@@ -54,6 +91,9 @@ export default function PropertyExplorer({
       return true;
     });
     list = [...list].sort((a, b) => {
+      // Disponibles primero, vendidas al final, sea cual sea el orden elegido.
+      const rank = saleRank(a) - saleRank(b);
+      if (rank !== 0) return rank;
       switch (sort) {
         case "price-asc":
           return a.price - b.price;
@@ -68,12 +108,8 @@ export default function PropertyExplorer({
     return list;
   }, [properties, operation, effectiveType, zone, sort]);
 
-  const reset = () => {
-    setOperation("all");
-    setType("all");
-    setZone("all");
-    setSort("featured");
-  };
+  const reset = () =>
+    writeParams({ operacion: null, tipo: null, zona: null, orden: null });
 
   // effectiveType y no `type`: `type` arranca en null ("todavía no eligió"),
   // y comparar null con "all" mostraba "Limpiar" sin ningún filtro activo.
@@ -140,6 +176,8 @@ export default function PropertyExplorer({
         </div>
       </div>
 
+      <h2 className="sr-only">Resultados</h2>
+
       {/* Grid */}
       {results.length > 0 ? (
         <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
@@ -152,16 +190,33 @@ export default function PropertyExplorer({
           <p className="font-display text-3xl text-ink">
             No encontramos propiedades
           </p>
-          <p className="max-w-sm text-ink-soft/70">
-            Probá ajustando los filtros o escribinos y buscamos la opción ideal
-            para vos.
+          <p className="max-w-md text-ink-soft/70">
+            {effectiveType !== "all"
+              ? `En este momento no hay propiedades de tipo «${TYPE_LABELS[effectiveType]}» publicadas, pero nos llegan nuevas seguido. Contanos qué buscás y te avisamos.`
+              : "Probá ajustando los filtros o escribinos y buscamos la opción ideal para vos."}
           </p>
-          <button
-            onClick={reset}
-            className="mt-2 rounded-full bg-moss-600 px-6 py-3 text-sm text-mint-100 transition-colors hover:bg-moss-700"
-          >
-            Ver todas
-          </button>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+            {phoneHref && (
+              <a
+                href={`https://wa.me/${phoneHref}?text=${encodeURIComponent(
+                  effectiveType !== "all"
+                    ? `Hola NÚA, estoy buscando una propiedad de tipo «${TYPE_LABELS[effectiveType]}». ¿Me avisan si les ingresa algo?`
+                    : "Hola NÚA, estoy buscando una propiedad. ¿Me pueden ayudar?"
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center rounded-full bg-moss-600 px-6 py-3 text-sm text-mint-100 transition-colors hover:bg-moss-700"
+              >
+                Escribinos por WhatsApp
+              </a>
+            )}
+            <button
+              onClick={reset}
+              className="min-h-11 rounded-full border border-moss-600/20 px-6 py-3 text-sm text-moss-600 transition-colors hover:bg-mint-100"
+            >
+              Ver todas
+            </button>
+          </div>
         </div>
       )}
     </div>

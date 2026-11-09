@@ -23,8 +23,11 @@ const PropertiesMap = dynamic(() => import("./PropertiesMap"), {
 
 export default function MapExplorer({
   properties,
+  showAllLink = true,
 }: {
   properties: Property[];
+  /** false en /propiedades: el link llevaba a la misma página. */
+  showAllLink?: boolean;
 }) {
   // `hovered` = preview temporal (se cierra al sacar el mouse);
   // `pinned` = fijado con clic (queda abierto). El activo es el hover si lo hay.
@@ -55,7 +58,10 @@ export default function MapExplorer({
   }, []);
 
   const base = useMemo(
-    () => properties.filter((p) => p.operation === "venta" && p.coords),
+    () =>
+      properties.filter(
+        (p) => p.operation === "venta" && p.coords && p.status !== "vendida"
+      ),
     [properties]
   );
 
@@ -201,12 +207,14 @@ export default function MapExplorer({
                 </button>
               );
             })}
-            <Link
-              href="/propiedades"
-              className="mt-1 rounded-2xl border border-dashed border-moss-600/25 px-4 py-3 text-center text-sm text-moss-600 transition-colors hover:bg-mint-100/50"
-            >
-              Ver todas las propiedades →
-            </Link>
+            {showAllLink && (
+              <Link
+                href="/propiedades"
+                className="mt-1 rounded-2xl border border-dashed border-moss-600/25 px-4 py-3 text-center text-sm text-moss-600 transition-colors hover:bg-mint-100/50"
+              >
+                Ver todas las propiedades →
+              </Link>
+            )}
           </div>
 
           {/* Map */}

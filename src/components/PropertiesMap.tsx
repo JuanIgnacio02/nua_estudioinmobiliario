@@ -7,6 +7,7 @@ import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import StreetTiles from "@/components/StreetTiles";
+import MobileMapGuard from "@/components/MobileMapGuard";
 import { formatPrice, TYPE_LABELS, type Property } from "@/lib/properties";
 
 type Pin = { property: Property; pos: [number, number] };
@@ -199,7 +200,8 @@ export default function PropertiesMap({
           </Popup>
         </Marker>
       ))}
-    </MapContainer>
+      <MobileMapGuard />
+      </MapContainer>
 
       {/* Aviso: cómo hacer zoom */}
       <div
@@ -208,7 +210,7 @@ export default function PropertiesMap({
         }`}
       >
         <span className="rounded-full bg-ink/80 px-5 py-2.5 text-sm font-medium text-bone shadow-lg backdrop-blur">
-          Usá Ctrl + rueda para hacer zoom
+          Usá Ctrl (⌘ en Mac) + rueda para hacer zoom
         </span>
       </div>
     </div>

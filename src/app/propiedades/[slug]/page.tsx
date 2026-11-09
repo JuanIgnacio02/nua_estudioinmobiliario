@@ -18,8 +18,12 @@ import {
   publishedProperties,
   TYPE_LABELS,
   OPERATION_LABELS,
+  saleStatus,
+  saleStatusLabel,
 } from "@/lib/properties";
 import { getStore } from "@/lib/store";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd, listingJsonLd } from "@/lib/seo";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
 // purga la caché, así que los cambios se ven al instante igual.
@@ -65,9 +69,14 @@ export default async function PropertyDetail({
   const hasBoundary = Boolean(p.boundary && p.boundary.length >= 3);
   const WHATSAPP = settings.contact.phoneHref;
   const EMAIL = settings.contact.email;
+  const sold = saleStatus(p) === "vendida";
+  // Si ya se vendió, la consulta apunta a algo parecido en lugar de a esta.
   const waText = encodeURIComponent(
-    `Hola NÚA, me interesa la propiedad "${p.title}" (${formatPrice(p)}). ¿Podrían darme más información?`
+    sold
+      ? `Hola NÚA, vi "${p.title}" y ya está ${saleStatusLabel(p).toLowerCase()}. ¿Tienen algo parecido?`
+      : `Hola NÚA, me interesa la propiedad "${p.title}" (${formatPrice(p)}). ¿Podrían darme más información?`
   );
+  const waLabel = sold ? "Consultar por similares" : "Consultar por WhatsApp";
 
   // Christie's-style stat row: big number + small label. Keep it to 4 tiles so
   // the grid never leaves a lonely item on a second row — drop "Tipo" (already
@@ -93,8 +102,17 @@ export default async function PropertyDetail({
 
   return (
     <>
+      <JsonLd data={listingJsonLd(p)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Inicio", path: "/" },
+          { name: "Propiedades", path: "/propiedades" },
+          { name: p.title, path: `/propiedades/${p.slug}` },
+        ])}
+      />
       <Navbar contact={settings.contact} />
-      <main className="bg-bone">
+      {/* pb en celular: deja lugar para la barra fija de WhatsApp */}
+      <main className="bg-bone pb-20 lg:pb-0">
         {/* Breadcrumb */}
         <div className="border-b border-moss-600/10 px-5 pt-28 md:px-10 md:pt-32">
           <nav className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-2 pb-4 text-xs text-ink-soft/60">
@@ -117,6 +135,9 @@ export default async function PropertyDetail({
               images={propertyImages(p)}
               alt={p.title}
               operationLabel={OPERATION_LABELS[p.operation]}
+              statusLabel={
+                saleStatus(p) === "disponible" ? undefined : saleStatusLabel(p)
+              }
               featured={p.featured}
             />
           </div>
@@ -134,8 +155,21 @@ export default async function PropertyDetail({
                 {p.title}
               </h1>
               <p className="mt-3 text-lg text-ink-soft/70">{p.location}</p>
-              <p className="mt-8 font-display text-4xl text-moss-600 md:text-5xl">
-                {formatPrice(p)}
+              <p className="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                <span
+                  className={`font-display text-4xl md:text-5xl ${
+                    sold
+                      ? "text-ink-soft/45 line-through decoration-2"
+                      : "text-moss-600"
+                  }`}
+                >
+                  {formatPrice(p)}
+                </span>
+                {saleStatus(p) !== "disponible" && (
+                  <span className="rounded-full bg-ink/85 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-mint-50">
+                    {saleStatusLabel(p)}
+                  </span>
+                )}
               </p>
 
               {/* Stats row */}
@@ -174,7 +208,7 @@ export default async function PropertyDetail({
                   rel="noopener noreferrer"
                   className="group mt-7 flex w-full items-center justify-center gap-3 rounded-full bg-moss-600 px-6 py-4 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700"
                 >
-                  Consultar por WhatsApp
+                  {waLabel}
                   <span className="transition-transform group-hover:translate-x-1">→</span>
                 </a>
                 <a
@@ -333,6 +367,34 @@ export default async function PropertyDetail({
           </section>
         )}
       </main>
+
+      {/* Barra fija de contacto en celular: el botón de WhatsApp queda
+          siempre a mano mientras se recorre la ficha. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-moss-600/10 bg-bone/90 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-[11px] uppercase tracking-[0.16em] text-sage-500">
+              {sold ? saleStatusLabel(p) : TYPE_LABELS[p.type]}
+            </p>
+            <p
+              className={`font-display text-xl leading-tight ${
+                sold ? "text-ink-soft/50 line-through decoration-1" : "text-moss-700"
+              }`}
+            >
+              {formatPrice(p)}
+            </p>
+          </div>
+          <a
+            href={`https://wa.me/${WHATSAPP}?text=${waText}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-moss-600 px-5 py-3 text-sm font-medium text-mint-100 transition-colors hover:bg-moss-700"
+          >
+            {sold ? "Ver similares" : "WhatsApp"}
+            <span aria-hidden>→</span>
+          </a>
+        </div>
+      </div>
       <Footer contact={settings.contact} />
     </>
   );

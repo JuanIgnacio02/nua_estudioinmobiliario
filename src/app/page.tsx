@@ -6,6 +6,8 @@ import FeaturedProperties from "@/components/sections/FeaturedProperties";
 import MapExplorer from "@/components/MapExplorer";
 import CtaBand from "@/components/sections/CtaBand";
 import { getStore } from "@/lib/store";
+import JsonLd from "@/components/JsonLd";
+import { agencyJsonLd } from "@/lib/seo";
 import { pickFeatured, publishedProperties } from "@/lib/properties";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
@@ -19,6 +21,7 @@ export default async function Home() {
 
   return (
     <>
+      <JsonLd data={agencyJsonLd(settings.contact)} />
       <Navbar tone="light" contact={settings.contact} />
       <main>
         <Hero />

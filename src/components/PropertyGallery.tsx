@@ -32,11 +32,14 @@ export default function PropertyGallery({
   images,
   alt,
   operationLabel,
+  statusLabel,
   featured,
 }: {
   images: string[];
   alt: string;
   operationLabel: string;
+  /** "Reservada" / "Vendida" / "Alquilada"; sin valor si está disponible. */
+  statusLabel?: string;
   featured?: boolean;
 }) {
   const [current, setCurrent] = useState(0);
@@ -98,10 +101,16 @@ export default function PropertyGallery({
           <span className="rounded-full bg-moss-900/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-mint-50 backdrop-blur-sm">
             {operationLabel}
           </span>
-          {featured && (
-            <span className="rounded-full bg-mint-50/90 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-moss-700">
-              Destacado
+          {statusLabel ? (
+            <span className="rounded-full bg-ink/85 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-mint-50">
+              {statusLabel}
             </span>
+          ) : (
+            featured && (
+              <span className="rounded-full bg-mint-50/90 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-moss-700">
+                Destacado
+              </span>
+            )
           )}
         </div>
 

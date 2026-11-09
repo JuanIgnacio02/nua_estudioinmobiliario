@@ -5,6 +5,7 @@ import { MapContainer, Polygon, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import StreetTiles from "@/components/StreetTiles";
+import MobileMapGuard from "@/components/MobileMapGuard";
 import SatelliteTiles, { SAT_MAX_ZOOM } from "@/components/SatelliteTiles";
 import { formatArea, formatPrice, type Property } from "@/lib/properties";
 
@@ -130,6 +131,7 @@ export default function LotBoundaryMap({
         </Polygon>
 
         <FitToBoundary points={points} />
+        <MobileMapGuard />
       </MapContainer>
 
       {/* Toggle satélite / mapa */}

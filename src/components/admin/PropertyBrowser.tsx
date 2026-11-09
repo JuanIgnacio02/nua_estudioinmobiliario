@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  saleStatusLabel,
   formatPrice,
   formatArea,
   TYPE_LABELS,
@@ -177,6 +178,9 @@ export default function PropertyBrowser({
                 <p className="truncate font-medium text-ink">{p.title}</p>
                 {p.draft && (
                   <span className="glass-chip glass-chip--draft">Borrador</span>
+                )}
+                {p.status && p.status !== "disponible" && (
+                  <span className="glass-chip">{saleStatusLabel(p)}</span>
                 )}
                 {p.featured && !p.draft && (
                   <span className="glass-chip">★ Portada</span>

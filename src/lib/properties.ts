@@ -36,7 +36,34 @@ export type Property = {
    * opcional para que las propiedades ya cargadas sigan publicadas.
    */
   draft?: boolean;
+  /**
+   * Estado comercial. Opcional: las ya cargadas cuentan como disponibles.
+   * Una vendida sigue publicada (prueba social y los links viejos no dan 404)
+   * pero va al final y sale del mapa.
+   */
+  status?: SaleStatus;
 };
+
+export type SaleStatus = "disponible" | "reservada" | "vendida";
+
+export const SALE_STATUSES: SaleStatus[] = ["disponible", "reservada", "vendida"];
+
+export function saleStatus(p: Pick<Property, "status">): SaleStatus {
+  return p.status ?? "disponible";
+}
+
+/** "Vendida" en venta, "Alquilada" en alquiler. */
+export function saleStatusLabel(p: Pick<Property, "status" | "operation">): string {
+  const s = saleStatus(p);
+  if (s === "reservada") return "Reservada";
+  if (s === "vendida") return p.operation === "alquiler" ? "Alquilada" : "Vendida";
+  return "Disponible";
+}
+
+/** Orden para listados: disponibles primero, después reservadas, al final vendidas. */
+export function saleRank(p: Pick<Property, "status">): number {
+  return SALE_STATUSES.indexOf(saleStatus(p));
+}
 
 /**
  * Propiedades visibles en la web pública (excluye borradores).
@@ -57,12 +84,31 @@ export type SiteSettings = {
   about: {
     paragraphs: string[];
     pillars: string[];
+    /** Descripción de cada pilar, por nombre (se muestra en /nosotras). */
+    pillarTexts?: Record<string, string>;
     teamImage: string;
     mission: string;
     vision: string;
     values: string;
   };
 };
+
+/**
+ * Descripciones por defecto de los pilares (editables en el admin).
+ * Reutilizan los textos que ya tenía /nosotras; la de "Compromiso" es nueva
+ * y absorbe "Transparencia", la tarjeta que no coincidía con los pilares.
+ */
+export const DEFAULT_PILLAR_TEXTS: Record<string, string> = {
+  Cercanía: "Escucha atenta en cada etapa del proceso.",
+  Energía: "Energía puesta en cada operación.",
+  Compromiso: "Seriedad y transparencia en cada paso.",
+  Acompañamiento: "Detrás de cada venta hay una historia.",
+};
+
+/** Descripción de un pilar: la editada en el admin o la de por defecto. */
+export function pillarText(about: SiteSettings["about"], pillar: string) {
+  return about.pillarTexts?.[pillar] ?? DEFAULT_PILLAR_TEXTS[pillar] ?? "";
+}
 
 export const TYPE_LABELS: Record<PropertyType, string> = {
   casa: "Casa",
@@ -245,6 +291,7 @@ export const defaultSettings: SiteSettings = {
       "Con compromiso real, escucha atenta y una mirada profesional que prioriza la confianza por sobre la urgencia. Estamos en San Rafael y trabajamos en toda Mendoza, conectando oportunidades con personas y construyendo relaciones que perduran.",
     ],
     pillars: ["Cercanía", "Energía", "Compromiso", "Acompañamiento"],
+    pillarTexts: DEFAULT_PILLAR_TEXTS,
     teamImage: "/images/equipo-lg.webp",
     mission:
       "Brindar un servicio inmobiliario profesional y personalizado, basado en la confianza, la transparencia y el acompañamiento real en cada etapa del proceso. Trabajamos desde San Rafael hacia toda Mendoza, priorizando relaciones sólidas por sobre operaciones rápidas.",
@@ -271,8 +318,10 @@ export function heroImage(p: Pick<Property, "image">) {
 }
 
 export function pickFeatured(list: Property[]) {
-  const featured = list.filter((p) => p.featured);
-  return featured.length > 0 ? featured : list.slice(0, 6);
+  // En portada solo lo que se puede comprar o alquilar.
+  const active = list.filter((p) => saleStatus(p) !== "vendida");
+  const featured = active.filter((p) => p.featured);
+  return featured.length > 0 ? featured : active.slice(0, 6);
 }
 
 export function getZones(list: Property[]) {
@@ -290,7 +339,11 @@ export function getRelated(list: Property[], slug: string, count = 3) {
     .sort((a, b) => {
       const at = a.type === current?.type ? 0 : 1;
       const bt = b.type === current?.type ? 0 : 1;
-      return at - bt || Number(b.featured) - Number(a.featured);
+      return (
+        saleRank(a) - saleRank(b) ||
+        at - bt ||
+        Number(b.featured) - Number(a.featured)
+      );
     })
     .slice(0, count);
 }

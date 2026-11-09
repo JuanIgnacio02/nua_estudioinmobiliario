@@ -27,7 +27,7 @@ export default async function LotesPage() {
       <main className="min-h-screen bg-bone">
         {/* Header */}
         <header className="relative overflow-hidden bg-celadon-400 px-6 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-44">
-          <div className="pointer-events-none absolute -bottom-[35%] -right-[4%] w-[55%] text-moss-900/[0.05] md:w-[40%]">
+          <div aria-hidden className="pointer-events-none absolute -bottom-[35%] -right-[4%] w-[55%] text-moss-900/[0.05] md:w-[40%]">
             <Logo className="h-auto w-full" />
           </div>
           <div className="relative mx-auto max-w-7xl">
@@ -70,7 +70,7 @@ export default async function LotesPage() {
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-mint-100 text-sage-500">
-                          <Logo className="h-10 w-auto opacity-40" />
+                          <span aria-hidden><Logo className="h-10 w-auto opacity-40" /></span>
                         </div>
                       )}
                       <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-moss-700 backdrop-blur">

@@ -534,6 +534,23 @@
   text-decoration: underline;
 }
 
+/* Títulos que se animan al cargar la página: arrancan ocultos desde el primer
+   pintado. Antes el HTML del servidor los mostraba, la animación los escondía
+   al hidratar y volvían a entrar (parpadeo visible en el hero).
+   Salvaguarda: si el JS nunca corre, a los 3,5 s aparecen solos; sin JS en
+   absoluto los muestra el <noscript> del layout. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-anim-immediate] [data-word] {
+    transform: translateY(115%);
+    animation: nua-heading-failsafe 0.01s linear 3.5s forwards;
+  }
+}
+@keyframes nua-heading-failsafe {
+  to {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

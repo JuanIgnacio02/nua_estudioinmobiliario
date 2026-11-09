@@ -15,11 +15,13 @@ import {
 } from "@/lib/store";
 import { cloudinaryEnabled, uploadToCloudinary } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/admin-session";
-import type {
-  Property,
-  Operation,
-  PropertyType,
-  SiteSettings,
+import {
+  SALE_STATUSES,
+  type Property,
+  type Operation,
+  type PropertyType,
+  type SaleStatus,
+  type SiteSettings,
 } from "@/lib/properties";
 import {
   polygonAreaM2,
@@ -221,6 +223,9 @@ export async function savePropertyAction(formData: FormData) {
     images: [],
     featured: formData.get("featured") === "on",
     draft: formData.get("draft") === "on",
+    status: SALE_STATUSES.includes(formData.get("status") as SaleStatus)
+      ? (formData.get("status") as SaleStatus)
+      : "disponible",
     description: String(formData.get("description") ?? "").trim(),
     coords:
       lat != null && lng != null ? [lat, lng] : undefined,
@@ -267,6 +272,20 @@ export async function saveContactAction(formData: FormData) {
   redirect("/admin/contacto?ok=1");
 }
 
+/** Descripciones de los pilares: JSON {nombre: texto}. Ignora lo que no sea texto. */
+function parsePillarTexts(raw: FormDataEntryValue | null): Record<string, string> {
+  try {
+    const obj = JSON.parse(String(raw ?? "{}"));
+    return Object.fromEntries(
+      Object.entries(obj).filter(
+        (e): e is [string, string] => typeof e[1] === "string" && e[1].trim() !== ""
+      ).map(([k, v]) => [k, v.trim()])
+    );
+  } catch {
+    return {};
+  }
+}
+
 export async function saveAboutAction(formData: FormData) {
   await requireAdmin();
   const store = await getStore();
@@ -275,6 +294,7 @@ export async function saveAboutAction(formData: FormData) {
     about: {
       paragraphs: parseList(formData.get("paragraphs")),
       pillars: parseList(formData.get("pillars")),
+      pillarTexts: parsePillarTexts(formData.get("pillarTexts")),
       teamImage:
         String(formData.get("teamImage") ?? "").trim() ||
         store.settings.about.teamImage,

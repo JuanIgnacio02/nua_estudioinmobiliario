@@ -6,7 +6,9 @@ import {
   TYPE_LABELS,
   OPERATION_LABELS,
   propertyImages,
+  SALE_STATUSES,
   type Property,
+  type SaleStatus,
   type Operation,
   type PropertyType,
 } from "@/lib/properties";
@@ -62,6 +64,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
   // Borrador: se guarda pero no sale en la web. Propiedades ya cargadas
   // (sin el campo) siguen publicadas.
   const [draft, setDraft] = useState(property?.draft ?? false);
+  const [status, setStatus] = useState<SaleStatus>(property?.status ?? "disponible");
   const [geoState, setGeoState] = useState<{
     loading: boolean;
     label?: string;
@@ -102,6 +105,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
       )}
 
       {draft && <input type="hidden" name="draft" value="on" />}
+      <input type="hidden" name="status" value={status} />
 
       {/* Estado de publicación */}
       <section className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
@@ -128,6 +132,33 @@ export default function PropertyForm({ property }: { property?: Property }) {
               }`}
             >
               {o.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Estado comercial */}
+      <section className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <p className="text-eyebrow text-sage-600">Disponibilidad</p>
+          <p className="mt-1 text-sm text-ink-soft/75">
+            {status === "disponible"
+              ? "Disponible para la venta o el alquiler."
+              : status === "reservada"
+                ? "Se muestra con la etiqueta \"Reservada\"."
+                : "Sigue publicada como \"Vendida\" (o \"Alquilada\"), al final del listado y fuera del mapa."}
+          </p>
+        </div>
+        <div className="glass-segment">
+          {SALE_STATUSES.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setStatus(v)}
+              aria-pressed={status === v}
+              className={`glass-segment__btn ${status === v ? "is-active" : ""}`}
+            >
+              {v === "disponible" ? "Disponible" : v === "reservada" ? "Reservada" : "Vendida"}
             </button>
           ))}
         </div>
