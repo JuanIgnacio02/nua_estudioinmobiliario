@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 
+/*
+ * Orientación de cada foto, conocida al cargarla. Se guarda por URL para que
+ * al volver a una foto ya vista no haya que esperar.
+ */
+type Orientation = "portrait" | "landscape";
+const orientationCache = new Map<string, Orientation>();
+
 /** Distancia mínima (px) para que un deslizamiento cuente como cambio de foto. */
 const SWIPE_PX = 45;
 
@@ -47,6 +54,7 @@ export default function PropertyGallery({
 }) {
   const [current, setCurrent] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [, setOrientVersion] = useState(0);
   const total = images.length;
   const closeBtn = useRef<HTMLButtonElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
@@ -84,21 +92,61 @@ export default function PropertyGallery({
   const prev = (current - 1 + total) % total;
   const next = (current + 1) % total;
 
+  const src = images[current];
+  const orientation = orientationCache.get(src);
+  // Las fotos de celular suelen ser verticales y de ~900 px de ancho. Estiradas
+  // para llenar un visor horizontal de 1.400 px se agrandaban 1,5-3 veces y se
+  // recortaban dos tercios: se veían enormes y borrosas. En pantallas grandes
+  // la vertical se muestra entera, a su tamaño real, y el resto se rellena con
+  // la misma foto desenfocada. En el celular (visor angosto) llenar no la
+  // agranda casi nada, así que se mantiene.
+  const portrait = orientation !== "landscape";
+  const onMainLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (!img.naturalWidth) return;
+    const o: Orientation = img.naturalHeight > img.naturalWidth * 0.9 ? "portrait" : "landscape";
+    if (orientationCache.get(src) !== o) {
+      orientationCache.set(src, o);
+      setOrientVersion((v) => v + 1);
+    }
+  };
+
   return (
     <>
       {/* Visor principal */}
       <ViewTransition name={transitionName}>
       <div
-        className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-bone-dark"
+        className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-moss-900 sm:aspect-[3/2] lg:aspect-auto lg:h-[min(80vh,58vw)]"
         {...swipeMain}
       >
+        {/* Fondo: la misma foto, chiquita y desenfocada (pesa ~2 KB). Solo
+            se ve detrás de las fotos verticales en pantallas grandes. */}
+        {portrait && (
+          <Image
+            src={src}
+            alt=""
+            aria-hidden
+            fill
+            sizes="96px"
+            className="hidden scale-110 object-cover blur-2xl brightness-95 saturate-[1.15] lg:block"
+          />
+        )}
         <Image
-          src={images[current]}
+          key={src}
+          src={src}
           alt={`${alt} — foto ${current + 1} de ${total}`}
           fill
           preload={current === 0}
-          sizes="(max-width: 1600px) 100vw, 1600px"
-          className="cursor-zoom-in object-cover"
+          quality={90}
+          // Hasta saber la orientación se pide la versión ancha (nunca queda
+          // corta); confirmada vertical, alcanza con el ancho que ocupa.
+          sizes={
+            orientation === "portrait"
+              ? "(max-width: 1024px) 100vw, 60vh"
+              : "(max-width: 1600px) 100vw, 1600px"
+          }
+          onLoad={onMainLoad}
+          className={`cursor-zoom-in object-cover ${portrait ? "lg:object-contain" : ""}`}
           onClick={() => setLightbox(true)}
         />
         <div className="pointer-events-none absolute left-5 top-5 flex gap-2">
