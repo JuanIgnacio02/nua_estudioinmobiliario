@@ -198,9 +198,22 @@ export default async function PropertyDetail({
                 )}
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
                 <FavoriteButton slug={p.slug} title={p.title} variant="pill" />
                 <ShareButton title={p.title} path={`/propiedades/${p.slug}`} />
+                <a
+                  href={`/propiedades/${p.slug}/ficha`}
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Ficha en PDF"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-moss-600/20 px-3 py-2.5 text-sm font-medium text-moss-700 transition-colors hover:bg-mint-100 sm:px-5"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6ZM14 3v6h6M12 12v6M9 15l3 3 3-3" />
+                  </svg>
+                  <span className="sm:hidden">PDF</span>
+                  <span className="hidden sm:inline">Ficha PDF</span>
+                </a>
               </div>
 
               {/* Stats row */}

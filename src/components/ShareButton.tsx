@@ -60,9 +60,9 @@ export default function ShareButton({ title, path }: { title: string; path: stri
         onClick={onClick}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-moss-600/20 px-5 py-2.5 text-sm font-medium text-moss-700 transition-colors hover:bg-mint-100"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-moss-600/20 px-3 py-2.5 text-sm font-medium text-moss-700 transition-colors hover:bg-mint-100 sm:w-auto sm:px-5"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
         </svg>
         Compartir

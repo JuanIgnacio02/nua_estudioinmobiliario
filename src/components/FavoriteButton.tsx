@@ -51,7 +51,7 @@ export default function FavoriteButton({
         onClick={onClick}
         aria-pressed={on}
         aria-label={label}
-        className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors ${
+        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 py-2.5 text-sm font-medium transition-colors sm:px-5 ${
           on
             ? "border-moss-600 bg-moss-600 text-mint-50 hover:bg-moss-700"
             : "border-moss-600/20 text-moss-700 hover:bg-mint-100"

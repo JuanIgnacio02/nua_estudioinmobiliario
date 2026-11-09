@@ -55,17 +55,30 @@ export async function brandFonts(text: string): Promise<Font[]> {
  * Foto como JPEG en data URL, recortada al tamaño de la tarjeta.
  * Acepta rutas de /public ("/images/...") o URLs (Cloudinary).
  */
-export async function photoDataUrl(src: string): Promise<string | null> {
+export async function photoDataUrl(
+  src: string,
+  size: { width: number; height: number } = OG_SIZE,
+  quality = 82
+): Promise<string | null> {
+  const jpg = await photoJpeg(src, size, quality);
+  return jpg ? `data:image/jpeg;base64,${jpg.toString("base64")}` : null;
+}
+
+/** La foto recortada a `size`, en JPEG (para placas, PDF, etc.). */
+export async function photoJpeg(
+  src: string,
+  size: { width: number; height: number },
+  quality = 82
+): Promise<Buffer | null> {
   try {
     const input = /^https?:\/\//.test(src)
       ? Buffer.from(await (await fetch(src)).arrayBuffer())
       : await readFile(join(process.cwd(), "public", src));
-    const jpg = await sharp(input)
+    return await sharp(input)
       .rotate()
-      .resize(OG_SIZE.width, OG_SIZE.height, { fit: "cover" })
-      .jpeg({ quality: 82 })
+      .resize(size.width, size.height, { fit: "cover" })
+      .jpeg({ quality, mozjpeg: true })
       .toBuffer();
-    return `data:image/jpeg;base64,${jpg.toString("base64")}`;
   } catch {
     return null;
   }
@@ -75,9 +88,9 @@ export async function photoDataUrl(src: string): Promise<string | null> {
  * ImageResponse siempre genera PNG, y con una foto pesa 1–1,7 MB: WhatsApp no
  * muestra vistas previas tan pesadas. Se reconvierte a JPEG (~10x más liviano).
  */
-export async function asJpeg(image: Response): Promise<Response> {
+export async function asJpeg(image: Response, quality = 80): Promise<Response> {
   const png = Buffer.from(await image.arrayBuffer());
-  const jpg = await sharp(png).jpeg({ quality: 80, mozjpeg: true }).toBuffer();
+  const jpg = await sharp(png).jpeg({ quality, mozjpeg: true }).toBuffer();
   return new Response(new Uint8Array(jpg), {
     headers: { "Content-Type": "image/jpeg" },
   });
