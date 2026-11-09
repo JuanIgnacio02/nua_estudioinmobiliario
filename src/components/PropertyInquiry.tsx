@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 
-const WHATSAPP = "5492604003217";
-
 export default function PropertyInquiry({
   propertyTitle,
+  phoneHref,
 }: {
   propertyTitle: string;
+  /** Número de WhatsApp editable desde el admin (settings.contact.phoneHref). */
+  phoneHref: string;
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -26,7 +27,7 @@ export default function PropertyInquiry({
     const text = encodeURIComponent(
       `${form.message}\n\nNombre: ${form.name}\nEmail: ${form.email}\nTel: ${form.phone}`
     );
-    window.open(`https://wa.me/${WHATSAPP}?text=${text}`, "_blank");
+    window.open(`https://wa.me/${phoneHref}?text=${text}`, "_blank");
   };
 
   return (

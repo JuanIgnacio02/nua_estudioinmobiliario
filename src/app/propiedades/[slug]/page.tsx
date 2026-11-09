@@ -13,6 +13,8 @@ import {
   getRelated,
   formatPrice,
   propertyImages,
+  paragraphs,
+  placeLabel,
   publishedProperties,
   TYPE_LABELS,
   OPERATION_LABELS,
@@ -41,7 +43,9 @@ export async function generateMetadata({
   return {
     title: p.title,
     description: p.description,
-    openGraph: { images: [p.image], title: p.title, description: p.description },
+    // La imagen la pone opengraph-image.tsx (tarjeta PNG con foto y precio).
+    openGraph: { title: p.title, description: p.description },
+    alternates: { canonical: `/propiedades/${p.slug}` },
   };
 }
 
@@ -58,6 +62,7 @@ export default async function PropertyDetail({
   if (!p) notFound();
 
   const related = getRelated(properties, slug);
+  const hasBoundary = Boolean(p.boundary && p.boundary.length >= 3);
   const WHATSAPP = settings.contact.phoneHref;
   const EMAIL = settings.contact.email;
   const waText = encodeURIComponent(
@@ -88,7 +93,7 @@ export default async function PropertyDetail({
 
   return (
     <>
-      <Navbar />
+      <Navbar contact={settings.contact} />
       <main className="bg-bone">
         {/* Breadcrumb */}
         <div className="border-b border-moss-600/10 px-5 pt-28 md:px-10 md:pt-32">
@@ -212,9 +217,25 @@ export default async function PropertyDetail({
           <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-[0.4fr_1fr] lg:gap-20">
             <p className="text-eyebrow text-sage-500">Descripción</p>
             <div className="max-w-3xl">
-              <p className="font-display text-2xl leading-[1.4] text-ink md:text-[1.9rem] md:leading-[1.45]">
-                {p.description}
-              </p>
+              {/* Primer párrafo como bajada; el resto en texto de lectura. Antes
+                  todo iba en un solo bloque serif grande y sin saltos de línea. */}
+              {paragraphs(p.description).map((para, i) =>
+                i === 0 ? (
+                  <p
+                    key={i}
+                    className="font-display text-2xl leading-[1.4] text-ink md:text-[1.75rem] md:leading-[1.45]"
+                  >
+                    {para}
+                  </p>
+                ) : (
+                  <p
+                    key={i}
+                    className="mt-5 text-lg leading-relaxed text-ink-soft/85"
+                  >
+                    {para}
+                  </p>
+                )
+              )}
               {p.highlights && (
                 <ul className="mt-10 grid gap-4 sm:grid-cols-3">
                   {p.highlights.map((h, i) => (
@@ -236,7 +257,8 @@ export default async function PropertyDetail({
           </div>
         </section>
 
-        {/* Map */}
+        {/* Map: solo si hay ubicación; sin coords mostraba un mapa genérico */}
+        {(p.coords || hasBoundary) && (
         <section className="border-t border-moss-600/10 px-5 py-14 md:px-10 md:py-20">
           <div className="mx-auto max-w-[1600px]">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -247,12 +269,12 @@ export default async function PropertyDetail({
                 </h2>
               </div>
               <span className="text-sm text-ink-soft/60">
-                {p.zone} · {p.city}
-                {p.boundary && p.boundary.length >= 3 && " · contorno del lote"}
+                {placeLabel(p.zone, p.city)}
+                {hasBoundary && " · contorno del lote"}
               </span>
             </div>
             <div className="h-[55vh] min-h-[400px] w-full overflow-hidden rounded-2xl border border-moss-600/10">
-              {p.boundary && p.boundary.length >= 3 ? (
+              {hasBoundary && p.boundary ? (
                 <LotBoundaryMapEmbed
                   property={p}
                   boundary={p.boundary}
@@ -264,6 +286,7 @@ export default async function PropertyDetail({
             </div>
           </div>
         </section>
+        )}
 
         {/* Request information */}
         <section className="border-t border-moss-600/10 px-5 py-14 md:px-10 md:py-20">
@@ -281,7 +304,7 @@ export default async function PropertyDetail({
               </p>
             </div>
             <div className="rounded-3xl border border-moss-600/10 bg-mint-50/40 p-6 md:p-10">
-              <PropertyInquiry propertyTitle={p.title} />
+              <PropertyInquiry propertyTitle={p.title} phoneHref={WHATSAPP} />
             </div>
           </div>
         </section>

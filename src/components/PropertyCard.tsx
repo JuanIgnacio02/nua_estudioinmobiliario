@@ -9,17 +9,19 @@ import {
   formatArea,
   TYPE_LABELS,
   OPERATION_LABELS,
+  plural,
 } from "@/lib/properties";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
 
 export default function PropertyCard({
   property,
   index,
-  priority = false,
+  eager = false,
 }: {
   property: Property;
   index?: number;
-  priority?: boolean;
+  /** Cargar sin esperar al scroll (solo tarjetas visibles al abrir). */
+  eager?: boolean;
 }) {
   const imgRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +48,7 @@ export default function PropertyCard({
             src={property.image}
             alt={property.title}
             fill
-            priority={priority}
+            loading={eager ? "eager" : "lazy"}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
           />
@@ -104,12 +106,12 @@ export default function PropertyCard({
             </span>
             {property.bedrooms != null && (
               <span className="before:mr-3 before:text-sage-400 before:content-['·']">
-                {property.bedrooms} hab.
+                {plural(property.bedrooms, "dorm.", "dorm.")}
               </span>
             )}
             {property.bathrooms != null && (
               <span className="before:mr-3 before:text-sage-400 before:content-['·']">
-                {property.bathrooms} baños
+                {plural(property.bathrooms, "baño", "baños")}
               </span>
             )}
           </div>

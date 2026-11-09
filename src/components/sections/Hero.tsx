@@ -70,7 +70,7 @@ export default function Hero() {
           src="/images/hero-home-lg.webp"
           alt="Propiedad destacada de NÚA Estudio Inmobiliario"
           fill
-          priority
+          preload
           quality={90}
           sizes="100vw"
           className="object-cover"
@@ -122,9 +122,9 @@ export default function Hero() {
 
       <div
         data-hero-cue
-        className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-mint-100/70"
+        className="absolute bottom-8 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-mint-100/70 md:flex"
       >
-        <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
+        <span className="text-[10px] uppercase tracking-[0.3em]">Explorá</span>
         <span className="h-10 w-px animate-pulse bg-mint-100/40" />
       </div>
 

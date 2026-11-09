@@ -16,6 +16,8 @@ export default function SmoothScroll({
   children: React.ReactNode;
 }) {
   const lenisRef = useRef<Lenis | null>(null);
+  // true cuando el cambio de ruta vino de Atrás/Adelante del navegador.
+  const fromHistory = useRef(false);
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
 
@@ -57,7 +59,14 @@ export default function SmoothScroll({
     };
     document.addEventListener("click", onClick);
 
+    // Menú y visor de fotos piden pausar el scroll de fondo: Lenis no respeta
+    // body{overflow:hidden}, así que hay que detenerlo explícitamente.
+    const onLock = (e: Event) =>
+      (e as CustomEvent<boolean>).detail ? lenis.stop() : lenis.start();
+    window.addEventListener("nua:scroll-lock", onLock);
+
     return () => {
+      window.removeEventListener("nua:scroll-lock", onLock);
       document.removeEventListener("click", onClick);
       window.removeEventListener("load", onLoad);
       clearTimeout(settle);
@@ -67,11 +76,25 @@ export default function SmoothScroll({
     };
   }, [isAdmin]);
 
-  // On route change: jump to top and recompute trigger positions.
   useEffect(() => {
-    const lenis = lenisRef.current;
-    if (lenis) lenis.scrollTo(0, { immediate: true });
-    else window.scrollTo(0, 0);
+    const onPop = () => {
+      fromHistory.current = true;
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // On route change: jump to top and recompute trigger positions.
+  // Excepto al volver con Atrás: ahí se respeta la posición que tenía el
+  // visitante (si no, volver de una ficha lo tira al principio del listado).
+  useEffect(() => {
+    if (fromHistory.current) {
+      fromHistory.current = false;
+    } else {
+      const lenis = lenisRef.current;
+      if (lenis) lenis.scrollTo(0, { immediate: true });
+      else window.scrollTo(0, 0);
+    }
 
     // Let the new page paint, then refresh (twice: layout + images).
     const t1 = setTimeout(() => ScrollTrigger.refresh(), 100);

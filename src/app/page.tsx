@@ -19,7 +19,7 @@ export default async function Home() {
 
   return (
     <>
-      <Navbar />
+      <Navbar tone="light" contact={settings.contact} />
       <main>
         <Hero />
         <Manifesto />

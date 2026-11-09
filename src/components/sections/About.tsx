@@ -67,6 +67,7 @@ export default function About({
           <div>
             <p className="text-eyebrow mb-6 text-moss-700">Sobre nosotras</p>
             <AnimatedHeading
+              as="h1"
               immediate
               delay={0.15}
               text="Tus socias de confianza"

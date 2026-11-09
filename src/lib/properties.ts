@@ -295,8 +295,35 @@ export function getRelated(list: Property[], slug: string, count = 3) {
     .slice(0, count);
 }
 
-export function formatPrice(p: Pick<Property, "price" | "currency">) {
-  return `US$ ${p.price.toLocaleString("es-AR")}`;
+/**
+ * Precio para mostrar. Sin precio cargado dice "Consultar" (antes publicaba
+ * "US$ 0"); los alquileres llevan "/mes".
+ */
+export function formatPrice(
+  p: Pick<Property, "price" | "currency"> & { operation?: Operation }
+) {
+  if (!p.price || p.price <= 0) return "Consultar";
+  const base = `US$ ${p.price.toLocaleString("es-AR")}`;
+  return p.operation === "alquiler" ? `${base}/mes` : base;
+}
+
+/** "1 baño" / "2 baños": cantidad con el sustantivo en el número correcto. */
+export function plural(n: number, one: string, many: string) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** "Barrio · Ciudad", sin repetir cuando son iguales ("San Rafael · San Rafael"). */
+export function placeLabel(zone: string | undefined, city: string) {
+  if (!zone || zone.trim().toLowerCase() === city.trim().toLowerCase()) return city;
+  return `${zone} · ${city}`;
+}
+
+/** Separa la descripción en párrafos respetando los saltos de línea cargados. */
+export function paragraphs(text: string): string[] {
+  return text
+    .split(/\n\s*\n|\n/)
+    .map((t) => t.trim())
+    .filter(Boolean);
 }
 
 export function formatArea(m2: number) {

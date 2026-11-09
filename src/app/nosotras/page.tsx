@@ -19,7 +19,7 @@ export default async function NosotrasPage() {
   const { settings } = await getStore();
   return (
     <>
-      <Navbar />
+      <Navbar contact={settings.contact} />
       <main>
         <About about={settings.about} />
         <Philosophy about={settings.about} />

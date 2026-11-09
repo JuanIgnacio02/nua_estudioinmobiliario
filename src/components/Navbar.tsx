@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
+import { defaultSettings, type SiteSettings } from "@/lib/properties";
 import {
   gsap,
   useIsomorphicLayoutEffect,
@@ -18,13 +19,20 @@ const LINKS = [
   { label: "Contacto", href: "/contacto" },
 ];
 
-const CONTACT = {
-  email: "fq.nuaestudioinmobiliario@gmail.com",
-  phone: "+54 9 260 400 3217",
-};
+/** La entrada animada se ve una sola vez por visita, no en cada navegación. */
+let introPlayed = false;
 
-export default function Navbar() {
+export default function Navbar({
+  tone = "dark",
+  contact = defaultSettings.contact,
+}: {
+  /** "light" = texto blanco arriba de todo, solo para heros oscuros (home). */
+  tone?: "light" | "dark";
+  /** Datos editables desde el admin; nunca escritos a mano acá. */
+  contact?: SiteSettings["contact"];
+}) {
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const overlay = useRef<HTMLDivElement>(null);
@@ -38,8 +46,10 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Intro slide-in.
+  // Intro slide-in (una vez por visita y respetando "reducir movimiento").
   useIsomorphicLayoutEffect(() => {
+    if (introPlayed || prefersReducedMotion()) return;
+    introPlayed = true;
     gsap.fromTo(
       "[data-nav]",
       { y: -60, autoAlpha: 0 },
@@ -90,8 +100,29 @@ export default function Navbar() {
       overlay.current.style.display = open ? "flex" : "none";
     }
     document.body.style.overflow = open ? "hidden" : "";
+    // Lenis ignora overflow:hidden; SmoothScroll lo pausa con este evento.
+    window.dispatchEvent(new CustomEvent("nua:scroll-lock", { detail: open }));
     return () => {
       document.body.style.overflow = "";
+      window.dispatchEvent(new CustomEvent("nua:scroll-lock", { detail: false }));
+    };
+  }, [open]);
+
+  // Teclado: Esc cierra, el foco entra al menú y vuelve al botón al cerrar.
+  useEffect(() => {
+    if (!open) return;
+    const button = menuButton.current;
+    const focusFirst = setTimeout(() => {
+      overlay.current?.querySelector<HTMLElement>("a")?.focus();
+    }, 350);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(focusFirst);
+      window.removeEventListener("keydown", onKey);
+      button?.focus();
     };
   }, [open]);
 
@@ -104,7 +135,8 @@ export default function Navbar() {
     setOpen(false);
   }
 
-  const light = !scrolled && !open; // white text over dark hero/header
+  // Texto blanco solo sobre un hero oscuro y antes de scrollear.
+  const light = tone === "light" && !scrolled && !open;
 
   return (
     <>
@@ -147,11 +179,12 @@ export default function Navbar() {
 
             {/* Menu toggle */}
             <button
+              ref={menuButton}
               onClick={() => setOpen((o) => !o)}
               aria-label={open ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={open}
               data-cursor={open ? "Cerrar" : "Menú"}
-              className={`group flex items-center gap-3 transition-colors duration-500 ${
+              className={`group -mr-2 flex min-h-11 min-w-11 items-center justify-center gap-3 px-2 transition-colors duration-500 ${
                 open ? "text-ink" : light ? "text-mint-50" : "text-ink"
               }`}
             >
@@ -183,7 +216,11 @@ export default function Navbar() {
       {/* Fullscreen overlay menu */}
       <div
         ref={overlay}
-        className="fixed inset-0 z-40 hidden flex-col justify-between bg-mint-100 px-5 pb-10 pt-28 md:px-10 md:pt-32"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú"
+        data-lenis-prevent
+        className="fixed inset-0 z-40 hidden flex-col justify-between overflow-y-auto bg-mint-100 px-5 pb-10 pt-28 md:px-10 md:pt-32"
         style={{ clipPath: "inset(0 0 100% 0)" }}
       >
         <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 gap-12 lg:grid-cols-[1.4fr_1fr]">
@@ -237,18 +274,18 @@ export default function Navbar() {
             <div data-menu-meta className="space-y-1">
               <p className="text-eyebrow text-sage-500">Contacto</p>
               <a
-                href={`mailto:${CONTACT.email}`}
+                href={`mailto:${contact.email}`}
                 className="block break-all text-lg text-moss-700 transition-colors hover:text-moss-900"
               >
-                {CONTACT.email}
+                {contact.email}
               </a>
               <a
-                href={`https://wa.me/5492604003217`}
+                href={`https://wa.me/${contact.phoneHref}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-lg text-moss-700 transition-colors hover:text-moss-900"
               >
-                {CONTACT.phone}
+                {contact.phone}
               </a>
             </div>
           </div>

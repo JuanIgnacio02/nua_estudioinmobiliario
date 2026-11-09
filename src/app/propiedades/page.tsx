@@ -25,7 +25,7 @@ export default async function PropiedadesPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar contact={settings.contact} />
       <main className="pb-28">
         {/* Page header */}
         <header className="relative overflow-hidden bg-celadon-400 px-6 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-44">

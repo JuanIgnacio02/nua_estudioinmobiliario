@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import LoteoMasterPlanEmbed from "@/components/LoteoMasterPlanEmbed";
 import { getStore } from "@/lib/store";
 import { findLoteo, loteoStats, LOT_STATUS_LABELS } from "@/lib/loteos";
+import { plural, placeLabel } from "@/lib/properties";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
 // purga la caché, así que los cambios se ven al instante igual.
@@ -48,9 +49,9 @@ export default async function LoteoPage({
 
   return (
     <>
-      <Navbar />
+      <Navbar contact={settings.contact} />
       <main className="bg-bone">
-        <section className="mx-auto max-w-[1400px] px-5 py-14 md:px-10 md:py-20">
+        <section className="mx-auto max-w-[1400px] px-5 pb-14 pt-28 md:px-10 md:pb-20 md:pt-32">
           <Link
             href="/lotes"
             className="text-sm text-ink-soft/60 transition-colors hover:text-moss-600"
@@ -62,7 +63,7 @@ export default async function LoteoPage({
             <div>
               <p className="text-eyebrow mb-2 flex items-center gap-3 text-sage-500">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-sage-500" />
-                {loteo.zone} · {loteo.city}
+                {placeLabel(loteo.zone, loteo.city)}
               </p>
               <h1 className="font-display text-3xl text-ink md:text-5xl">
                 {loteo.title}
@@ -77,7 +78,11 @@ export default async function LoteoPage({
                   key={st}
                   className="rounded-full border border-mint-200 bg-white/60 px-3 py-1.5 text-ink-soft"
                 >
-                  {stats[st]} {LOT_STATUS_LABELS[st].toLowerCase()}
+                  {plural(
+                    stats[st],
+                    LOT_STATUS_LABELS[st].toLowerCase(),
+                    `${LOT_STATUS_LABELS[st].toLowerCase()}s`
+                  )}
                 </span>
               ))}
             </div>

@@ -63,7 +63,7 @@ export default function FeaturedProperties({
         >
           {featuredProperties.map((p, i) => (
             <div data-card key={p.slug}>
-              <PropertyCard property={p} index={i} priority={i < 3} />
+              <PropertyCard property={p} index={i} />
             </div>
           ))}
         </div>

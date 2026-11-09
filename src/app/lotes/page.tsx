@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
 import { getStore } from "@/lib/store";
 import { loteoStats } from "@/lib/loteos";
+import { plural, placeLabel } from "@/lib/properties";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
 // purga la caché, así que los cambios se ven al instante igual.
@@ -22,7 +23,7 @@ export default async function LotesPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar contact={settings.contact} />
       <main className="min-h-screen bg-bone">
         {/* Header */}
         <header className="relative overflow-hidden bg-celadon-400 px-6 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-44">
@@ -73,18 +74,18 @@ export default async function LotesPage() {
                         </div>
                       )}
                       <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-moss-700 backdrop-blur">
-                        {s.disponible} disponibles
+                        {plural(s.disponible, "disponible", "disponibles")}
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col p-5">
                       <p className="text-xs uppercase tracking-wide text-ink-soft/60">
-                        {l.zone} · {l.city}
+                        {placeLabel(l.zone, l.city)}
                       </p>
                       <h2 className="mt-1 font-display text-2xl text-ink">
                         {l.title}
                       </h2>
                       <p className="mt-2 flex-1 text-sm text-ink-soft/70">
-                        {s.total} lotes
+                        {plural(s.total, "lote", "lotes")}
                         {s.desde
                           ? ` · desde US$ ${s.desde.toLocaleString("es-AR")}`
                           : ""}

@@ -82,14 +82,6 @@ export default function Footer({
               derechos reservados.
             </span>
           </div>
-          <div className="flex gap-6">
-            <Link href="/#" className="transition-colors hover:text-moss-900">
-              Política de privacidad
-            </Link>
-            <Link href="/#" className="transition-colors hover:text-moss-900">
-              Términos de servicio
-            </Link>
-          </div>
         </div>
       </div>
     </footer>

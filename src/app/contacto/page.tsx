@@ -19,7 +19,7 @@ export default async function ContactoPage() {
   const { settings } = await getStore();
   return (
     <>
-      <Navbar />
+      <Navbar contact={settings.contact} />
       <main>
         <header className="bg-celadon-400 px-5 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-48">
           <div className="mx-auto max-w-[1600px]">
@@ -30,7 +30,7 @@ export default async function ContactoPage() {
             <AnimatedHeading
               as="h1"
               immediate
-              text="Estamos aquí para ayudarte"
+              text="Estamos acá para ayudarte"
               className="text-display max-w-[16ch] font-display text-moss-900"
             />
           </div>

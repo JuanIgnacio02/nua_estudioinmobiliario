@@ -75,13 +75,15 @@ export default function PropertyExplorer({
     setSort("featured");
   };
 
+  // effectiveType y no `type`: `type` arranca en null ("todavía no eligió"),
+  // y comparar null con "all" mostraba "Limpiar" sin ningún filtro activo.
   const hasFilters =
-    operation !== "all" || type !== "all" || zone !== "all";
+    operation !== "all" || effectiveType !== "all" || zone !== "all";
 
   return (
     <div className="mx-auto max-w-7xl px-6 md:px-10">
       {/* Filter bar */}
-      <div className="sticky top-20 z-30 rounded-3xl border border-moss-600/10 bg-bone/80 p-4 backdrop-blur-xl md:top-24 md:p-5">
+      <div className="z-30 rounded-3xl border border-moss-600/10 bg-bone/80 p-4 backdrop-blur-xl md:sticky md:top-24 md:p-5">
         <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end sm:gap-4">
           <Select
             label="Operación"
@@ -142,7 +144,7 @@ export default function PropertyExplorer({
       {results.length > 0 ? (
         <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((p, i) => (
-            <PropertyCard key={p.slug} property={p} index={i} priority={i < 3} />
+            <PropertyCard key={p.slug} property={p} index={i} eager={i < 2} />
           ))}
         </div>
       ) : (

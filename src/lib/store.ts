@@ -7,7 +7,7 @@ import {
   type Property,
   type SiteSettings,
 } from "./properties";
-import { seedLoteos, type Loteo } from "./loteos";
+import type { Loteo } from "./loteos";
 import { supabase, STORE_TABLE, STORE_ID } from "./supabase";
 
 /**
@@ -27,7 +27,8 @@ const STORE_PATH = path.join(DATA_DIR, "store.json");
 function normalize(partial: Partial<Store> | null | undefined): Store {
   return {
     properties: partial?.properties ?? seedProperties,
-    loteos: partial?.loteos ?? seedLoteos,
+    // Sin loteos cargados, vacío: el de ejemplo trae precios inventados.
+    loteos: partial?.loteos ?? [],
     settings: { ...defaultSettings, ...partial?.settings },
   };
 }

@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnimatedHeading from "@/components/anim/AnimatedHeading";
 import {
@@ -33,6 +34,26 @@ export default function MapExplorer({
   const [cat, setCat] = useState<"todos" | "lote" | "propiedad">("todos");
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  // El mapa (Leaflet + tiles) se monta recién cuando el visitante se acerca:
+  // queda lejos del primer pantallazo y no tiene sentido cargarlo de entrada.
+  const mapBox = useRef<HTMLDivElement>(null);
+  const [showMap, setShowMap] = useState(false);
+  useEffect(() => {
+    const el = mapBox.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShowMap(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const base = useMemo(
     () => properties.filter((p) => p.operation === "venta" && p.coords),
     [properties]
@@ -63,7 +84,7 @@ export default function MapExplorer({
     active && list.some((p) => p.slug === active) ? active : null;
 
   const FILTERS: { key: typeof cat; label: string }[] = [
-    { key: "todos", label: "Ambos" },
+    { key: "todos", label: "Todos" },
     { key: "lote", label: "Lotes" },
     { key: "propiedad", label: "Propiedades" },
   ];
@@ -121,7 +142,12 @@ export default function MapExplorer({
 
         <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
           {/* List */}
-          <div className="order-2 flex max-h-[70vh] min-h-[460px] flex-col gap-2 overflow-y-auto pr-1 lg:order-1">
+          {/* data-lenis-prevent: la lista tiene scroll propio; sin esto Lenis se
+              queda con la rueda y mueve la página en lugar de la lista. */}
+          <div
+            data-lenis-prevent
+            className="order-2 flex max-h-[70vh] min-h-[460px] flex-col gap-2 overflow-y-auto overscroll-contain pr-1 lg:order-1"
+          >
             {list.map((p) => {
               const isActive = active === p.slug;
               return (
@@ -144,11 +170,14 @@ export default function MapExplorer({
                   }`}
                 >
                   <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-bone-dark">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    {/* Miniatura de 96px: next/image pide esa medida y no la
+                        foto original (antes se bajaban fotos de 1600px). */}
+                    <Image
                       src={p.image}
                       alt={p.title}
-                      className={`h-full w-full object-cover transition-transform duration-500 ${
+                      fill
+                      sizes="96px"
+                      className={`object-cover transition-transform duration-500 ${
                         isActive ? "scale-105" : "group-hover:scale-105"
                       }`}
                     />
@@ -181,15 +210,24 @@ export default function MapExplorer({
           </div>
 
           {/* Map */}
-          <div className="order-1 h-[70vh] min-h-[460px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(36,41,15,0.35)] lg:order-2">
-            <PropertiesMap
-              properties={list}
-              activeSlug={activeInList}
-              onSelect={(slug) => {
-                setHovered(null);
-                setPinned(slug);
-              }}
-            />
+          <div
+            ref={mapBox}
+            className="order-1 h-[70vh] min-h-[460px] w-full overflow-hidden rounded-[1.75rem] border border-moss-600/10 shadow-[0_30px_60px_-30px_rgba(36,41,15,0.35)] lg:order-2"
+          >
+            {showMap ? (
+              <PropertiesMap
+                properties={list}
+                activeSlug={activeInList}
+                onSelect={(slug) => {
+                  setHovered(null);
+                  setPinned(slug);
+                }}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-mint-100/40 text-sm text-sage-500">
+                Cargando mapa…
+              </div>
+            )}
           </div>
         </div>
       </div>
