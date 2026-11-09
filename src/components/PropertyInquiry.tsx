@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { propertySlugFromPath, track } from "@/lib/track";
 
 export default function PropertyInquiry({
   propertyTitle,
@@ -27,6 +28,7 @@ export default function PropertyInquiry({
     const text = encodeURIComponent(
       `${form.message}\n\nNombre: ${form.name}\nEmail: ${form.email}\nTel: ${form.phone}`
     );
+    track("whatsapp", propertySlugFromPath(window.location.pathname));
     window.open(`https://wa.me/${phoneHref}?text=${text}`, "_blank");
   };
 

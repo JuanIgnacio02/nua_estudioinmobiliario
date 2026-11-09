@@ -10,11 +10,14 @@ import {
   useIsomorphicLayoutEffect,
   prefersReducedMotion,
 } from "@/lib/gsap";
+import { useFavorites } from "@/lib/favorites";
+import { Heart } from "@/components/FavoriteButton";
 
 const LINKS = [
   { label: "Inicio", href: "/" },
   { label: "Propiedades", href: "/propiedades" },
   { label: "Lotes", href: "/lotes" },
+  { label: "Tasaciones", href: "/tasaciones" },
   { label: "Sobre nosotras", href: "/nosotras" },
   { label: "Contacto", href: "/contacto" },
 ];
@@ -162,7 +165,7 @@ export default function Navbar({
           <div className="flex items-center gap-6 md:gap-10">
             {/* Desktop inline links (understated, SAOTA-like) */}
             <nav className="hidden items-center gap-8 lg:flex">
-              {LINKS.slice(0, 3).map((l) => (
+              {LINKS.slice(0, 4).map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
@@ -176,6 +179,8 @@ export default function Navbar({
                 </Link>
               ))}
             </nav>
+
+            <FavoritesLink light={light && !open} />
 
             {/* Menu toggle */}
             <button
@@ -300,5 +305,25 @@ export default function Navbar({
         </div>
       </div>
     </>
+  );
+}
+
+/** Corazón con la cantidad de favoritas. Solo aparece si hay alguna guardada. */
+function FavoritesLink({ light }: { light: boolean }) {
+  const { favorites } = useFavorites();
+  if (favorites.length === 0) return null;
+  return (
+    <Link
+      href="/favoritas"
+      aria-label={`Mis favoritas (${favorites.length})`}
+      className={`relative -mr-2 flex min-h-11 min-w-11 items-center justify-center transition-colors duration-500 md:-mr-4 ${
+        light ? "text-mint-50" : "text-ink"
+      }`}
+    >
+      <Heart filled={false} size={20} />
+      <span className="absolute right-0.5 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#b0413e] px-1 text-[10px] font-semibold leading-none text-white">
+        {favorites.length}
+      </span>
+    </Link>
   );
 }

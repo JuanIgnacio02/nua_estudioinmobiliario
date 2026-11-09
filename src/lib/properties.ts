@@ -42,7 +42,44 @@ export type Property = {
    * pero va al final y sale del mapa.
    */
   status?: SaleStatus;
+  /** Cuándo se cargó (ISO). Las anteriores al campo no lo tienen. */
+  createdAt?: string;
+  /** Precio antes de la última baja, para mostrar "Bajó de precio". */
+  previousPrice?: number;
+  /** Cuándo bajó el precio (ISO). */
+  priceDroppedAt?: string;
 };
+
+/** Nombre compartido entre la foto de la tarjeta y la de la ficha: el
+ *  navegador anima una hacia la otra al entrar (<ViewTransition>). */
+export const photoTransitionName = (slug: string) => `foto-${slug}`;
+
+const DAY = 24 * 60 * 60 * 1000;
+/** Días que una propiedad lleva la etiqueta "Nuevo". */
+export const NEW_DAYS = 15;
+/** Días que se muestra "Bajó de precio" después de la baja. */
+export const PRICE_DROP_DAYS = 60;
+
+/** Cargada hace menos de NEW_DAYS días. */
+export function isNew(p: Pick<Property, "createdAt">, now = Date.now()) {
+  if (!p.createdAt) return false;
+  const t = Date.parse(p.createdAt);
+  return Number.isFinite(t) && now - t < NEW_DAYS * DAY;
+}
+
+/** Baja de precio vigente: precio anterior y porcentaje. */
+export function priceDrop(
+  p: Pick<Property, "price" | "previousPrice" | "priceDroppedAt">,
+  now = Date.now()
+): { from: number; pct: number } | null {
+  if (!p.previousPrice || !p.price || p.previousPrice <= p.price) return null;
+  const t = p.priceDroppedAt ? Date.parse(p.priceDroppedAt) : NaN;
+  if (!Number.isFinite(t) || now - t > PRICE_DROP_DAYS * DAY) return null;
+  return {
+    from: p.previousPrice,
+    pct: Math.round((1 - p.price / p.previousPrice) * 100),
+  };
+}
 
 export type SaleStatus = "disponible" | "reservada" | "vendida";
 
@@ -81,6 +118,8 @@ export function propertyImages(p: Pick<Property, "image" | "images">): string[] 
 
 export type SiteSettings = {
   contact: { email: string; phone: string; phoneHref: string };
+  /** Orden de las destacadas en la portada (slugs). Las que no estén, al final. */
+  featuredOrder?: string[];
   about: {
     paragraphs: string[];
     pillars: string[];
@@ -317,11 +356,23 @@ export function heroImage(p: Pick<Property, "image">) {
   return p.image.replace(/\.webp$/i, "-lg.webp");
 }
 
-export function pickFeatured(list: Property[]) {
+export function pickFeatured(list: Property[], order: string[] = []) {
   // En portada solo lo que se puede comprar o alquilar.
   const active = list.filter((p) => saleStatus(p) !== "vendida");
-  const featured = active.filter((p) => p.featured);
+  const featured = sortByOrder(active.filter((p) => p.featured), order);
   return featured.length > 0 ? featured : active.slice(0, 6);
+}
+
+/** Ordena según la lista de slugs elegida en el admin; el resto, como estaba. */
+export function sortByOrder(list: Property[], order: string[] = []) {
+  const pos = (slug: string) => {
+    const i = order.indexOf(slug);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  return list
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => pos(a.p.slug) - pos(b.p.slug) || a.i - b.i)
+    .map((x) => x.p);
 }
 
 export function getZones(list: Property[]) {

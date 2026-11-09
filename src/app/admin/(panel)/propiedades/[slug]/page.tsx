@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getStore } from "@/lib/store";
 import { findProperty } from "@/lib/properties";
 import PropertyForm from "@/components/admin/PropertyForm";
+import DuplicateButton from "@/components/admin/DuplicateButton";
 
 export const dynamic = "force-dynamic";
 
@@ -25,15 +26,18 @@ export default async function EditProperty({
         >
           ← Propiedades
         </Link>
-        {!property.draft && (
-          <Link
-            href={`/propiedades/${property.slug}`}
-            target="_blank"
-            className="glass-btn text-xs"
-          >
-            Ver en la web ↗
-          </Link>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <DuplicateButton slug={property.slug} title={property.title} variant="button" />
+          {!property.draft && (
+            <Link
+              href={`/propiedades/${property.slug}`}
+              target="_blank"
+              className="glass-btn text-xs"
+            >
+              Ver en la web ↗
+            </Link>
+          )}
+        </div>
       </div>
       <h1 className="mt-3 font-display text-4xl text-ink">Editar propiedad</h1>
       <p className="mb-8 mt-2 line-clamp-2 text-ink-soft/70">{property.title}</p>

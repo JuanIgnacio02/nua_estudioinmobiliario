@@ -5,6 +5,7 @@ import Manifesto from "@/components/sections/Manifesto";
 import FeaturedProperties from "@/components/sections/FeaturedProperties";
 import MapExplorer from "@/components/MapExplorer";
 import CtaBand from "@/components/sections/CtaBand";
+import SellBand from "@/components/sections/SellBand";
 import { getStore } from "@/lib/store";
 import JsonLd from "@/components/JsonLd";
 import { agencyJsonLd } from "@/lib/seo";
@@ -17,7 +18,7 @@ export const revalidate = 300;
 export default async function Home() {
   const { properties: all, settings } = await getStore();
   const properties = publishedProperties(all);
-  const featured = pickFeatured(properties);
+  const featured = pickFeatured(properties, settings.featuredOrder);
 
   return (
     <>
@@ -28,6 +29,7 @@ export default async function Home() {
         <Manifesto />
         <FeaturedProperties properties={featured} />
         <MapExplorer properties={properties} />
+        <SellBand />
         <CtaBand />
       </main>
       <Footer contact={settings.contact} />

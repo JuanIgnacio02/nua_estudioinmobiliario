@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
+import SiteTracker from "@/components/SiteTracker";
 import SmoothScroll from "@/components/SmoothScroll";
 import { SITE_URL } from "@/lib/site";
 
@@ -56,6 +57,7 @@ export default function RootLayout({
           <style>{`[data-anim-immediate] [data-word]{transform:none!important;animation:none!important}`}</style>
         </noscript>
         <SmoothScroll>{children}</SmoothScroll>
+        <SiteTracker />
       </body>
     </html>
   );

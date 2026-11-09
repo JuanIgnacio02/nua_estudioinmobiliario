@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Reveal from "@/components/anim/Reveal";
 import { defaultSettings, type SiteSettings } from "@/lib/properties";
+import { track } from "@/lib/track";
 
 export default function Contact({
   contact = defaultSettings.contact,
@@ -27,6 +28,7 @@ export default function Contact({
     const text = encodeURIComponent(
       `Hola NÚA, soy ${form.name}.\n${form.message}\n\nEmail: ${form.email}\nTel: ${form.phone}`
     );
+    track("whatsapp");
     window.open(`https://wa.me/${CONTACT.phoneHref}?text=${text}`, "_blank");
   };
 

@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Allow uploading real (multi-MB) photos via Server Actions.
     serverActions: { bodySizeLimit: "20mb" },
+    // La foto de la tarjeta "viaja" hasta la ficha al entrar (<ViewTransition>).
+    viewTransition: true,
   },
 };
 

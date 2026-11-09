@@ -9,7 +9,7 @@ import {
   getStore,
   upsertProperty,
   deleteProperty,
-  saveSettings,
+  updateSettings,
   upsertLoteo,
   deleteLoteo,
 } from "@/lib/store";
@@ -280,6 +280,20 @@ export async function savePropertyAction(
   property.images = images;
   property.image = images[0] ?? "/images/properties/terreno-25demayo.webp";
 
+  // Fecha de carga y bajas de precio ("Nuevo" / "Bajó de precio").
+  const before = existingSlug
+    ? store.properties.find((p) => p.slug === existingSlug)
+    : undefined;
+  const now = new Date().toISOString();
+  property.createdAt = before ? before.createdAt : now;
+  if (before && before.price > 0 && property.price > 0 && property.price < before.price) {
+    property.previousPrice = before.price;
+    property.priceDroppedAt = now;
+  } else if (before && property.price === before.price) {
+    property.previousPrice = before.previousPrice;
+    property.priceDroppedAt = before.priceDroppedAt;
+  }
+
   await upsertProperty(property);
   revalidateAll();
   // El aviso ("Propiedad creada · Ver en la web") viaja en la URL.
@@ -288,6 +302,36 @@ export async function savePropertyAction(
   });
   if (!property.draft) qs.set("ver", `/propiedades/${slug}`);
   redirect(`/admin/propiedades?${qs}`);
+}
+
+/** Copia una propiedad como borrador (para cargar rápido otra parecida). */
+export async function duplicatePropertyAction(formData: FormData) {
+  await requireAdmin();
+  const slug = String(formData.get("slug") ?? "");
+  const store = await getStore();
+  const src = store.properties.find((p) => p.slug === slug);
+  if (!src) redirect("/admin/propiedades");
+
+  const title = `${src.title} (copia)`;
+  const base = slugify(title) || "propiedad";
+  let newSlug = base;
+  let n = 1;
+  while (store.properties.some((p) => p.slug === newSlug)) newSlug = `${base}-${n++}`;
+
+  const copy: Property = {
+    ...src,
+    slug: newSlug,
+    title,
+    draft: true,
+    featured: false,
+    status: "disponible",
+    createdAt: new Date().toISOString(),
+    previousPrice: undefined,
+    priceDroppedAt: undefined,
+  };
+  await upsertProperty(copy);
+  revalidateAll();
+  redirect(`/admin/propiedades/${newSlug}?ok=propiedad-duplicada`);
 }
 
 export async function deletePropertyAction(formData: FormData) {
@@ -314,16 +358,26 @@ export async function saveContactAction(
       error: "El número de WhatsApp no parece completo. Usá el formato 5492604003217.",
     };
   }
-  const store = await getStore();
-  const settings: SiteSettings = {
-    ...store.settings,
+  await updateSettings({
     contact: {
       email: String(formData.get("email") ?? "").trim(),
       phone: String(formData.get("phone") ?? "").trim(),
       phoneHref,
     },
-  };
-  await saveSettings(settings);
+  });
+  revalidateAll();
+  return { ok: true };
+}
+
+/** Orden de las destacadas en la portada. */
+export async function saveFeaturedOrderAction(
+  order: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  const clean = Array.isArray(order)
+    ? order.filter((s) => typeof s === "string" && /^[a-z0-9-]{1,120}$/.test(s))
+    : [];
+  await updateSettings({ featuredOrder: clean });
   revalidateAll();
   return { ok: true };
 }
@@ -347,21 +401,18 @@ export async function saveAboutAction(
 ): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   const store = await getStore();
-  const settings: SiteSettings = {
-    ...store.settings,
-    about: {
-      paragraphs: parseList(formData.get("paragraphs")),
-      pillars: parseList(formData.get("pillars")),
-      pillarTexts: parsePillarTexts(formData.get("pillarTexts")),
-      teamImage:
-        String(formData.get("teamImage") ?? "").trim() ||
-        store.settings.about.teamImage,
-      mission: String(formData.get("mission") ?? "").trim(),
-      vision: String(formData.get("vision") ?? "").trim(),
-      values: String(formData.get("values") ?? "").trim(),
-    },
+  const about: SiteSettings["about"] = {
+    paragraphs: parseList(formData.get("paragraphs")),
+    pillars: parseList(formData.get("pillars")),
+    pillarTexts: parsePillarTexts(formData.get("pillarTexts")),
+    teamImage:
+      String(formData.get("teamImage") ?? "").trim() ||
+      store.settings.about.teamImage,
+    mission: String(formData.get("mission") ?? "").trim(),
+    vision: String(formData.get("vision") ?? "").trim(),
+    values: String(formData.get("values") ?? "").trim(),
   };
-  await saveSettings(settings);
+  await updateSettings({ about });
   revalidateAll();
   return { ok: true };
 }

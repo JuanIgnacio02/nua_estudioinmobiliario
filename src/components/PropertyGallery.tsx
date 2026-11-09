@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 
 /** Distancia mínima (px) para que un deslizamiento cuente como cambio de foto. */
@@ -34,6 +34,7 @@ export default function PropertyGallery({
   operationLabel,
   statusLabel,
   featured,
+  transitionName,
 }: {
   images: string[];
   alt: string;
@@ -41,6 +42,8 @@ export default function PropertyGallery({
   /** "Reservada" / "Vendida" / "Alquilada"; sin valor si está disponible. */
   statusLabel?: string;
   featured?: boolean;
+  /** Mismo nombre que la foto de la tarjeta: se anima de una a la otra. */
+  transitionName?: string;
 }) {
   const [current, setCurrent] = useState(0);
   const [lightbox, setLightbox] = useState(false);
@@ -84,6 +87,7 @@ export default function PropertyGallery({
   return (
     <>
       {/* Visor principal */}
+      <ViewTransition name={transitionName}>
       <div
         className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-bone-dark"
         {...swipeMain}
@@ -133,6 +137,7 @@ export default function PropertyGallery({
           </>
         )}
       </div>
+      </ViewTransition>
 
       {/* Miniaturas */}
       {total > 1 && (

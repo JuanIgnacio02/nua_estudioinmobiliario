@@ -143,6 +143,17 @@ export async function saveSettings(settings: SiteSettings): Promise<void> {
   await saveStore(store);
 }
 
+/**
+ * Cambia solo una parte de la configuración, leyendo lo actual con la lectura
+ * estricta: si Supabase falla, tira error en vez de pisar el resto con datos
+ * de ejemplo.
+ */
+export async function updateSettings(patch: Partial<SiteSettings>): Promise<void> {
+  const store = await getStoreForWrite();
+  store.settings = { ...store.settings, ...patch };
+  await saveStore(store);
+}
+
 /* ------------------------------- loteos -------------------------------- */
 
 export async function getLoteos(): Promise<Loteo[]> {

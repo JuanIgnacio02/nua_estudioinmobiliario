@@ -883,3 +883,45 @@ select.admin-input {
     scroll-behavior: auto !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Favoritas y transiciones                                           */
+/* ------------------------------------------------------------------ */
+
+.nua-heart-pop {
+  display: inline-flex;
+  animation: nua-heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes nua-heart-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* La foto de la tarjeta viaja hasta la ficha (<ViewTransition name="foto-…">).
+   El resto de la página hace un fundido corto. */
+::view-transition-group(*) {
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+  .nua-heart-pop {
+    animation: none;
+  }
+}

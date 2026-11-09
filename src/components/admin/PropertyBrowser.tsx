@@ -6,6 +6,8 @@ import Image from "next/image";
 import {
   saleStatus,
   saleStatusLabel,
+  isNew,
+  priceDrop,
   formatPrice,
   formatArea,
   TYPE_LABELS,
@@ -16,6 +18,7 @@ import {
 } from "@/lib/properties";
 import { deletePropertyAction } from "@/app/admin/actions";
 import DeleteButton from "./DeleteButton";
+import DuplicateButton from "./DuplicateButton";
 
 type EstadoFiltro = "todas" | "publicadas" | "borradores";
 
@@ -234,6 +237,12 @@ function PropertyRow({ p }: { p: Property }) {
             </span>
           )}
           {p.featured && !p.draft && <span className="glass-chip">★ Portada</span>}
+          {status === "disponible" && priceDrop(p) && (
+            <span className="glass-chip glass-chip--warn">Bajó de precio</span>
+          )}
+          {status === "disponible" && !priceDrop(p) && isNew(p) && (
+            <span className="glass-chip">Nuevo</span>
+          )}
           {!p.coords && (
             <span className="glass-chip glass-chip--warn" title="No aparece en el mapa de la web">
               Sin ubicación
@@ -270,6 +279,7 @@ function PropertyRow({ p }: { p: Property }) {
         >
           Editar
         </span>
+        <DuplicateButton slug={p.slug} title={p.title} />
         <DeleteButton
           action={deletePropertyAction}
           slug={p.slug}

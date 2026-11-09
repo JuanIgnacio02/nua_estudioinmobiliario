@@ -31,18 +31,18 @@ export default function Footer({
           <FooterCol
             title="Propiedades"
             items={[
-              ["Casas", "/propiedades?tipo=casa"],
-              ["Departamentos", "/propiedades?tipo=departamento"],
-              ["Terrenos / Lotes", "/propiedades?tipo=terreno"],
-              ["Fincas", "/propiedades?tipo=finca"],
-              ["Complejo de cabañas", "/propiedades?tipo=cabanas"],
+              ["Casas", "/propiedades/tipo/casas"],
+              ["Departamentos", "/propiedades/tipo/departamentos"],
+              ["Terrenos / Lotes", "/propiedades/tipo/terrenos"],
+              ["Fincas", "/propiedades/tipo/fincas"],
+              ["Complejo de cabañas", "/propiedades/tipo/complejos-de-cabanas"],
             ]}
           />
           <FooterCol
             title="Servicios"
             items={[
-              ["Compra / Venta", "/contacto"],
-              ["Tasaciones", "/contacto"],
+              ["Compra / Venta", "/propiedades"],
+              ["Tasaciones", "/tasaciones"],
               ["Asesoramiento", "/contacto"],
               ["Alquileres / Administración", "/contacto"],
               ["Sobre nosotras", "/nosotras"],

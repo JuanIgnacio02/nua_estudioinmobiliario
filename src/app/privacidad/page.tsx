@@ -16,7 +16,8 @@ export const metadata: Metadata = {
  * Redactada a partir de lo que el sitio hace realmente (verificado en el
  * código): los formularios no se guardan en ningún servidor, solo arman un
  * mensaje de WhatsApp que envía el propio visitante; no hay cookies para los
- * visitantes; los mapas se piden a Esri desde el navegador.
+ * visitantes; los mapas se piden a Esri desde el navegador. Las estadísticas
+ * son contadores anónimos (lib/stats.ts) y las favoritas viven en localStorage.
  * Conviene que la revise un profesional y sumar la razón social y el CUIT.
  */
 export default async function PrivacidadPage() {
@@ -41,7 +42,7 @@ export default async function PrivacidadPage() {
     },
     {
       title: "Qué datos recibimos",
-      body: "Los formularios del sitio (contacto y consulta por una propiedad) piden nombre, email, teléfono y un mensaje. Esos datos no se guardan en este sitio ni se envían a nuestros servidores: al enviar el formulario se abre WhatsApp con el mensaje ya escrito, y sos vos quien decide mandarlo. Si nos escribís por email o WhatsApp, recibimos los datos que vos elijas incluir.",
+      body: "Los formularios del sitio (contacto, consulta por una propiedad y pedido de tasación) piden datos como nombre, email, teléfono, la dirección de tu propiedad y un mensaje. Esos datos no se guardan en este sitio ni se envían a nuestros servidores: al enviar el formulario se abre WhatsApp con el mensaje ya escrito, y sos vos quien decide mandarlo. Si nos escribís por email o WhatsApp, recibimos los datos que vos elijas incluir.",
     },
     {
       title: "Para qué los usamos",
@@ -49,7 +50,7 @@ export default async function PrivacidadPage() {
     },
     {
       title: "Cookies y medición",
-      body: "Este sitio no usa cookies para los visitantes ni herramientas de seguimiento o publicidad. La única cookie existe en el panel de administración interno, para mantener la sesión del personal de NÚA.",
+      body: "Este sitio no usa cookies para los visitantes ni herramientas de seguimiento o publicidad. Para saber qué propiedades interesan más, contamos de forma anónima cuántas veces se abre cada ficha y cuántas veces se toca un botón de WhatsApp: solo se guarda un número por día y por propiedad, sin datos personales ni identificadores. Las propiedades que guardás como favoritas quedan en tu propio navegador (almacenamiento local) y nunca se nos envían, salvo que vos decidas mandárnoslas por WhatsApp. La única cookie existe en el panel de administración interno, para mantener la sesión del personal de NÚA.",
     },
     {
       title: "Servicios de terceros",

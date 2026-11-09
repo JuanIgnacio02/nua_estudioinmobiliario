@@ -6,9 +6,13 @@ import {
   formatArea,
   publishedProperties,
   TYPE_LABELS,
+  sortByOrder,
   type PropertyType,
 } from "@/lib/properties";
 import { loteoStats } from "@/lib/loteos";
+import { getStatsSummary } from "@/lib/stats";
+import VisitsChart from "@/components/admin/VisitsChart";
+import FeaturedOrder from "@/components/admin/FeaturedOrder";
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +39,18 @@ function greeting() {
 }
 
 export default async function AdminDashboard() {
-  const { properties, loteos } = await getStore();
+  const [{ properties, loteos, settings }, stats] = await Promise.all([
+    getStore(),
+    getStatsSummary(30),
+  ]);
   const publicadas = publishedProperties(properties);
+  const titleOf = new Map(properties.map((p) => [p.slug, p]));
+  const top = (stats?.bySlug ?? []).filter((r) => titleOf.has(r.slug)).slice(0, 6);
+  const hasStats = Boolean(stats && (stats.totals.view || stats.totals.whatsapp || stats.totals.tasacion));
+  const featuredItems = sortByOrder(
+    publicadas.filter((p) => p.featured && p.status !== "vendida"),
+    settings.featuredOrder
+  ).map((p) => ({ slug: p.slug, title: p.title, image: p.image }));
   const borradores = properties.length - publicadas.length;
   const sinMapa = properties.filter((p) => !p.coords).length;
 
@@ -141,11 +155,106 @@ export default async function AdminDashboard() {
         </div>
       )}
 
+      {/* Actividad de la web */}
+      <section className="glass-panel mt-6 p-5 md:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-sans text-[0.95rem] font-semibold tracking-normal text-ink">
+            Actividad de la web · últimos 30 días
+          </h2>
+          <p className="text-xs text-ink-soft/55">Anónimo, sin contar las visitas de ustedes</p>
+        </div>
+
+        {!stats ? (
+          <p className="mt-4 text-sm text-ink-soft/60">
+            No se pudieron leer las estadísticas ahora. Probá recargar en un rato.
+          </p>
+        ) : !hasStats ? (
+          <p className="mt-4 text-sm text-ink-soft/60">
+            Todavía no hay datos: se empiezan a contar las visitas a cada ficha
+            y los clics en WhatsApp desde hoy.
+          </p>
+        ) : (
+          <>
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              {(
+                [
+                  ["Visitas a fichas", stats.totals.view],
+                  ["Consultas por WhatsApp", stats.totals.whatsapp],
+                  ["Pedidos de tasación", stats.totals.tasacion],
+                ] as const
+              ).map(([label, n]) => (
+                <div key={label}>
+                  <p className="font-display text-3xl leading-none text-moss-700">
+                    {n.toLocaleString("es-AR")}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-snug text-ink-soft/60">{label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6">
+              <p className="mb-3 text-[0.68rem] uppercase tracking-[0.16em] text-sage-600">
+                Visitas por día
+              </p>
+              <VisitsChart data={stats.daily} />
+            </div>
+
+            {top.length > 0 && (
+              <div className="mt-7">
+                <p className="mb-2 text-[0.68rem] uppercase tracking-[0.16em] text-sage-600">
+                  Las más consultadas
+                </p>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] text-ink-soft/50">
+                      <th className="py-2 font-normal">Propiedad</th>
+                      <th className="py-2 text-right font-normal">Visitas</th>
+                      <th className="py-2 text-right font-normal">WhatsApp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {top.map((r) => (
+                      <tr key={r.slug} className="border-t border-moss-600/10">
+                        <td className="max-w-0 py-2.5 pr-3">
+                          <Link
+                            href={`/admin/propiedades/${r.slug}`}
+                            className="block truncate text-ink hover:text-moss-700"
+                          >
+                            {titleOf.get(r.slug)?.title}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 text-right tabular-nums text-ink-soft">{r.view}</td>
+                        <td className="py-2.5 text-right font-medium tabular-nums text-ink">
+                          {r.whatsapp}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
       {/* Desgloses */}
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Breakdown title="Por tipo" items={porTipo} total={publicadas.length} />
         <Breakdown title="Por zona" items={porZona} total={publicadas.length} />
       </div>
+
+      {/* Orden de la portada */}
+      <section className="glass-panel mt-6 p-5 md:p-6">
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-sans text-[0.95rem] font-semibold tracking-normal text-ink">
+            Destacadas en la portada
+          </h2>
+          <Link href="/" target="_blank" className="text-xs text-moss-700 hover:underline">
+            Ver el inicio ↗
+          </Link>
+        </div>
+        <FeaturedOrder items={featuredItems} />
+      </section>
 
       {/* Recientes */}
       <section className="mt-10">

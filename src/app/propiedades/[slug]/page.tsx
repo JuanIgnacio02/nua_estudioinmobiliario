@@ -6,6 +6,9 @@ import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyMapEmbed from "@/components/PropertyMapEmbed";
 import { centroid } from "@/lib/geo";
+import { TYPE_PAGES } from "@/lib/categories";
+import FavoriteButton from "@/components/FavoriteButton";
+import ShareButton from "@/components/ShareButton";
 import LotBoundaryMapEmbed from "@/components/LotBoundaryMapEmbed";
 import PropertyInquiry from "@/components/PropertyInquiry";
 import PropertyGallery from "@/components/PropertyGallery";
@@ -21,6 +24,8 @@ import {
   OPERATION_LABELS,
   saleStatus,
   saleStatusLabel,
+  priceDrop,
+  photoTransitionName,
 } from "@/lib/properties";
 import { getStore } from "@/lib/store";
 import JsonLd from "@/components/JsonLd";
@@ -74,6 +79,7 @@ export default async function PropertyDetail({
   const WHATSAPP = settings.contact.phoneHref;
   const EMAIL = settings.contact.email;
   const sold = saleStatus(p) === "vendida";
+  const drop = sold ? null : priceDrop(p);
   // Si ya se vendió, la consulta apunta a algo parecido en lugar de a esta.
   const waText = encodeURIComponent(
     sold
@@ -111,6 +117,7 @@ export default async function PropertyDetail({
         data={breadcrumbJsonLd([
           { name: "Inicio", path: "/" },
           { name: "Propiedades", path: "/propiedades" },
+          { name: TYPE_PAGES[p.type].title, path: `/propiedades/tipo/${TYPE_PAGES[p.type].slug}` },
           { name: p.title, path: `/propiedades/${p.slug}` },
         ])}
       />
@@ -128,6 +135,10 @@ export default async function PropertyDetail({
               Propiedades
             </Link>
             <span>/</span>
+            <Link href={`/propiedades/tipo/${TYPE_PAGES[p.type].slug}`} className="hover:text-moss-600">
+              {TYPE_PAGES[p.type].title}
+            </Link>
+            <span>/</span>
             <span className="text-ink-soft/40">{p.city}</span>
           </nav>
         </div>
@@ -143,6 +154,7 @@ export default async function PropertyDetail({
                 saleStatus(p) === "disponible" ? undefined : saleStatusLabel(p)
               }
               featured={p.featured}
+              transitionName={photoTransitionName(p.slug)}
             />
           </div>
         </section>
@@ -174,7 +186,22 @@ export default async function PropertyDetail({
                     {saleStatusLabel(p)}
                   </span>
                 )}
+                {drop && (
+                  <span className="flex items-center gap-2 text-sm">
+                    <span className="text-ink-soft/50 line-through">
+                      {formatPrice({ ...p, price: drop.from })}
+                    </span>
+                    <span className="rounded-full bg-[#b0413e] px-2.5 py-1 text-xs font-semibold text-white">
+                      Bajó {drop.pct}%
+                    </span>
+                  </span>
+                )}
               </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <FavoriteButton slug={p.slug} title={p.title} variant="pill" />
+                <ShareButton title={p.title} path={`/propiedades/${p.slug}`} />
+              </div>
 
               {/* Stats row */}
               <dl className="mt-10 grid grid-cols-2 gap-y-8 border-y border-moss-600/15 py-8 sm:grid-cols-4">

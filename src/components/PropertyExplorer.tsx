@@ -18,6 +18,25 @@ const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const SORTS: SortKey[] = ["featured", "price-asc", "price-desc", "area-desc"];
 
 /*
+ * Rangos de precio. Venta y alquiler tienen escalas muy distintas, así que
+ * cada operación tiene los suyos; elegir un rango implica esa operación.
+ * Las propiedades "Consultar" (sin precio) no entran en ningún rango.
+ */
+type Range = { key: string; label: string; min: number; max: number; op: Operation };
+const k = (n: number) => n.toLocaleString("es-AR");
+const RANGES: Range[] = [
+  { key: "hasta-50", label: `Hasta US$ ${k(50000)}`, min: 0, max: 50000, op: "venta" },
+  { key: "50-100", label: `US$ ${k(50000)} a ${k(100000)}`, min: 50000, max: 100000, op: "venta" },
+  { key: "100-200", label: `US$ ${k(100000)} a ${k(200000)}`, min: 100000, max: 200000, op: "venta" },
+  { key: "200-400", label: `US$ ${k(200000)} a ${k(400000)}`, min: 200000, max: 400000, op: "venta" },
+  { key: "mas-400", label: `Más de US$ ${k(400000)}`, min: 400000, max: Infinity, op: "venta" },
+  { key: "alq-hasta-500", label: "Hasta US$ 500/mes", min: 0, max: 500, op: "alquiler" },
+  { key: "alq-500-1000", label: "US$ 500 a 1.000/mes", min: 500, max: 1000, op: "alquiler" },
+  { key: "alq-mas-1000", label: "Más de US$ 1.000/mes", min: 1000, max: Infinity, op: "alquiler" },
+];
+const BEDS = ["1", "2", "3", "4"];
+
+/*
  * Los filtros viven en la URL (?tipo=terreno&operacion=venta&zona=...&orden=...):
  * - al volver de una ficha con "Atrás" siguen aplicados;
  * - una búsqueda se puede compartir por WhatsApp tal cual.
@@ -74,9 +93,22 @@ export default function PropertyExplorer({
   const zone = rawZone && zones.includes(rawZone) ? rawZone : "all";
   const rawSort = params.get("orden") as SortKey | null;
   const sort: SortKey = rawSort && SORTS.includes(rawSort) ? rawSort : "featured";
+  const rawRange = RANGES.find((r) => r.key === params.get("precio")) ?? null;
+  // Un rango de venta con "Alquiler" elegido (o al revés) no aplica.
+  const range = rawRange && (operation === "all" || rawRange.op === operation) ? rawRange : null;
+  const rawBeds = params.get("dormitorios");
+  const beds = rawBeds && BEDS.includes(rawBeds) ? Number(rawBeds) : 0;
+  // Rangos que se ofrecen: los de la operación elegida (o venta si son todas).
+  const rangeOptions = RANGES.filter((r) => r.op === (operation === "alquiler" ? "alquiler" : "venta"));
 
+  // Cambiar de operación borra un rango de precio que ya no corresponde.
   const setOperation = (v: Operation | "all") =>
-    writeParams({ operacion: v === "all" ? null : v });
+    writeParams({
+      operacion: v === "all" ? null : v,
+      ...(range && v !== "all" && range.op !== v ? { precio: null } : {}),
+    });
+  const setRange = (v: string) => writeParams({ precio: v === "all" ? null : v });
+  const setBeds = (v: string) => writeParams({ dormitorios: v === "all" ? null : v });
   const setType = (v: PropertyType | "all") =>
     writeParams({ tipo: v === "all" ? null : v });
   const setZone = (v: string) => writeParams({ zona: v === "all" ? null : v });
@@ -88,6 +120,11 @@ export default function PropertyExplorer({
       if (operation !== "all" && p.operation !== operation) return false;
       if (effectiveType !== "all" && p.type !== effectiveType) return false;
       if (zone !== "all" && p.zone !== zone) return false;
+      if (range) {
+        if (p.operation !== range.op || !p.price) return false;
+        if (p.price < range.min || p.price >= range.max) return false;
+      }
+      if (beds && (p.bedrooms ?? 0) < beds) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -106,15 +143,26 @@ export default function PropertyExplorer({
       }
     });
     return list;
-  }, [properties, operation, effectiveType, zone, sort]);
+  }, [properties, operation, effectiveType, zone, sort, range, beds]);
 
   const reset = () =>
-    writeParams({ operacion: null, tipo: null, zona: null, orden: null });
+    writeParams({
+      operacion: null,
+      tipo: null,
+      zona: null,
+      orden: null,
+      precio: null,
+      dormitorios: null,
+    });
 
   // effectiveType y no `type`: `type` arranca en null ("todavía no eligió"),
   // y comparar null con "all" mostraba "Limpiar" sin ningún filtro activo.
   const hasFilters =
-    operation !== "all" || effectiveType !== "all" || zone !== "all";
+    operation !== "all" ||
+    effectiveType !== "all" ||
+    zone !== "all" ||
+    range !== null ||
+    beds > 0;
 
   return (
     <div className="mx-auto max-w-7xl px-6 md:px-10">
@@ -146,6 +194,24 @@ export default function PropertyExplorer({
             options={[
               ["all", "Todas"],
               ...zones.map((z) => [z, z] as [string, string]),
+            ]}
+          />
+          <Select
+            label="Precio"
+            value={range?.key ?? "all"}
+            onChange={setRange}
+            options={[
+              ["all", "Cualquiera"],
+              ...rangeOptions.map((r) => [r.key, r.label] as [string, string]),
+            ]}
+          />
+          <Select
+            label="Dormitorios"
+            value={beds ? String(beds) : "all"}
+            onChange={setBeds}
+            options={[
+              ["all", "Todos"],
+              ...BEDS.map((b) => [b, `${b} o más`] as [string, string]),
             ]}
           />
           <Select

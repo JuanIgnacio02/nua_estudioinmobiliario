@@ -19,6 +19,7 @@ const MESSAGES: Record<string, string> = {
   "propiedad-creada": "Propiedad creada",
   "propiedad-guardada": "Cambios guardados",
   "propiedad-borrada": "Propiedad borrada",
+  "propiedad-duplicada": "Copia creada como borrador: cambiá lo que haga falta y publicala",
   "loteo-creado": "Loteo creado",
   "loteo-guardado": "Cambios guardados",
   "loteo-borrado": "Loteo borrado",
