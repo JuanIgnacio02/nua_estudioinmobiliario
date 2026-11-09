@@ -14,8 +14,7 @@ const LotBoundaryMap = dynamic(() => import("./LotBoundaryMap"), {
 
 export default function LotBoundaryMapEmbed(props: {
   property: Property;
-  boundary?: [number, number][];
-  showInfoCard?: boolean;
+  boundary: [number, number][];
 }) {
   return <LotBoundaryMap {...props} />;
 }

@@ -12,7 +12,12 @@ import { useMap } from "react-leaflet";
  * Funciona porque Leaflet solo pone `touch-action: none` cuando el arrastre
  * está habilitado; deshabilitado, el navegador hace scroll normal.
  */
-export default function MobileMapGuard() {
+export default function MobileMapGuard({
+  placement = "center",
+}: {
+  /** "top": el aviso va arriba, para no tapar lo que se muestra en el centro. */
+  placement?: "center" | "top";
+} = {}) {
   const map = useMap();
   // Solo se monta en el cliente (los mapas se cargan con ssr:false).
   const [coarse] = useState(() => window.matchMedia("(pointer: coarse)").matches);
@@ -40,7 +45,11 @@ export default function MobileMapGuard() {
 
   if (!coarse || !locked) return null;
   return (
-    <div className="pointer-events-none absolute left-1/2 top-1/2 z-[1000] -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink/70 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
+    <div
+      className={`pointer-events-none absolute left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/70 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-sm ${
+        placement === "top" ? "top-14" : "top-1/2 -translate-y-1/2"
+      }`}
+    >
       Tocá el mapa para moverlo
     </div>
   );

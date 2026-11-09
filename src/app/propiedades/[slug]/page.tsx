@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyMapEmbed from "@/components/PropertyMapEmbed";
+import { centroid } from "@/lib/geo";
 import LotBoundaryMapEmbed from "@/components/LotBoundaryMapEmbed";
 import PropertyInquiry from "@/components/PropertyInquiry";
 import PropertyGallery from "@/components/PropertyGallery";
@@ -67,6 +68,9 @@ export default async function PropertyDetail({
 
   const related = getRelated(properties, slug);
   const hasBoundary = Boolean(p.boundary && p.boundary.length >= 3);
+  // Destino de "Cómo llegar": el pin, o el centro del terreno si no hay pin.
+  const directionsTo: [number, number] | null =
+    p.coords ?? (hasBoundary && p.boundary ? centroid(p.boundary) : null);
   const WHATSAPP = settings.contact.phoneHref;
   const EMAIL = settings.contact.email;
   const sold = saleStatus(p) === "vendida";
@@ -297,23 +301,34 @@ export default async function PropertyDetail({
           <div className="mx-auto max-w-[1600px]">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-eyebrow mb-3 text-sage-500">Ubicación</p>
+                <p className="text-eyebrow mb-3 text-sage-500">
+                  {hasBoundary ? "Ubicación y terreno" : "Ubicación"}
+                </p>
                 <h2 className="font-display text-3xl text-ink md:text-4xl">
                   {p.location}
                 </h2>
+                <p className="mt-2 text-sm text-ink-soft/60">
+                  {placeLabel(p.zone, p.city)}
+                  {hasBoundary && " · el área verde es lo que ocupa la propiedad"}
+                </p>
               </div>
-              <span className="text-sm text-ink-soft/60">
-                {placeLabel(p.zone, p.city)}
-                {hasBoundary && " · contorno del lote"}
-              </span>
+              {directionsTo && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${directionsTo[0]},${directionsTo[1]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-moss-600/20 px-5 py-2.5 text-sm font-medium text-moss-700 transition-colors hover:bg-mint-100"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M3 11 21 3l-8 18-2-8-8-2Z" />
+                  </svg>
+                  Cómo llegar
+                </a>
+              )}
             </div>
             <div className="h-[55vh] min-h-[400px] w-full overflow-hidden rounded-2xl border border-moss-600/10">
               {hasBoundary && p.boundary ? (
-                <LotBoundaryMapEmbed
-                  property={p}
-                  boundary={p.boundary}
-                  showInfoCard={false}
-                />
+                <LotBoundaryMapEmbed property={p} boundary={p.boundary} />
               ) : (
                 <PropertyMapEmbed slug={p.slug} properties={properties} />
               )}

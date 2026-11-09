@@ -617,6 +617,105 @@ select.admin-input {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Leaflet map — editor de terrenos                                   */
+/* ------------------------------------------------------------------ */
+
+.nua-vertex {
+  background: transparent !important;
+  border: none !important;
+}
+.nua-vertex__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #455021;
+  color: #ebefe1;
+  font: 600 11px/1 var(--font-sans), system-ui, sans-serif;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(36, 41, 15, 0.55);
+  cursor: grab;
+  transition: transform 0.15s;
+}
+.nua-vertex__dot:hover {
+  transform: scale(1.12);
+}
+.nua-vertex__dot.is-selected {
+  background: #d9a441;
+  color: #24290f;
+  box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.35), 0 2px 8px rgba(36, 41, 15, 0.55);
+}
+/* Primera esquina mientras se dibuja: se toca para cerrar. */
+.nua-vertex__dot.is-first {
+  animation: nua-close-pulse 1.4s ease-out infinite;
+}
+@keyframes nua-close-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(172, 178, 151, 0.9), 0 2px 8px rgba(36, 41, 15, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(172, 178, 151, 0), 0 2px 8px rgba(36, 41, 15, 0.55);
+  }
+}
+.nua-mid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #455021;
+  font: 700 14px/1 system-ui, sans-serif;
+  border: 1.5px solid #455021;
+  box-shadow: 0 1px 4px rgba(36, 41, 15, 0.4);
+  cursor: copy;
+  opacity: 0.85;
+}
+.nua-mid:hover {
+  opacity: 1;
+}
+.nua-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: #fff;
+  color: #455021;
+  border: 2px solid #455021;
+  box-shadow: 0 3px 10px rgba(36, 41, 15, 0.5);
+  cursor: move;
+}
+.nua-handle--rotate {
+  background: #455021;
+  color: #fff;
+  border-color: #fff;
+  cursor: grab;
+}
+.nua-draggable-shape {
+  cursor: move;
+}
+.nua-edge-label {
+  background: transparent !important;
+  border: none !important;
+}
+.nua-edge-label span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #24290f;
+  padding: 2px 7px;
+  font: 600 11px/1.3 var(--font-sans), system-ui, sans-serif;
+  box-shadow: 0 1px 4px rgba(36, 41, 15, 0.35);
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Leaflet map — custom pins & popups                                 */
 /* ------------------------------------------------------------------ */
 

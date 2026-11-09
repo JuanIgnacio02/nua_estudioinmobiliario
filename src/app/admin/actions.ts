@@ -23,6 +23,7 @@ import {
   type SaleStatus,
   type SiteSettings,
 } from "@/lib/properties";
+import { nearestOnLines, type StreetHint } from "@/lib/geo";
 import {
   polygonAreaM2,
   type Loteo,
@@ -136,6 +137,46 @@ export async function geocodeAction(
     };
   } catch {
     return { ok: false, error: "Error al geolocalizar" };
+  }
+}
+
+/** Calle más cercana a un punto (OpenStreetMap), para alinear el terreno. */
+export async function nearestStreetAction(
+  lat: number,
+  lng: number
+): Promise<StreetHint | null> {
+  await requireAdmin();
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=17&polygon_geojson=1&polygon_threshold=0.00001`,
+      {
+        headers: {
+          "User-Agent": "NUA-Estudio-Inmobiliario/1.0 (admin geocoder)",
+          "Accept-Language": "es",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(6000),
+      }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      category?: string;
+      geojson?: { type: string; coordinates: unknown };
+    };
+    if (data.category !== "highway" || !data.geojson) return null;
+    // GeoJSON viene como [lng, lat].
+    const toLine = (coords: unknown) =>
+      (coords as [number, number][]).map(([x, y]) => [y, x] as [number, number]);
+    const lines =
+      data.geojson.type === "LineString"
+        ? [toLine(data.geojson.coordinates)]
+        : data.geojson.type === "MultiLineString"
+          ? (data.geojson.coordinates as unknown[]).map(toLine)
+          : [];
+    return nearestOnLines([lat, lng], lines);
+  } catch {
+    return null;
   }
 }
 

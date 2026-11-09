@@ -195,7 +195,7 @@ export default function LoteoForm({ loteo }: { loteo?: Loteo }) {
         {/* ---- Paso 2: dibujo de lotes sobre el satélite. ---- */}
         <Panel
           title="2 · Lotes"
-          description="Agregá cada lote, marcá sus esquinas sobre el satélite y completá precio y estado. Los m² se calculan solos."
+          description="Escribí el frente y el fondo del primer lote y ubicalo sobre el satélite. Los de al lado se agregan con las flechas, ya alineados. Los m² se calculan solos."
           aside={
             <span
               className={`glass-chip ${drawn < lots.length ? "glass-chip--warn" : ""}`}

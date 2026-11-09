@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, Marker, Polygon, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import StreetTiles from "@/components/StreetTiles";
 import MobileMapGuard from "@/components/MobileMapGuard";
+import { useMapZoom } from "@/components/EdgeLabels";
 import { formatPrice, TYPE_LABELS, type Property } from "@/lib/properties";
 
 type Pin = { property: Property; pos: [number, number] };
@@ -78,6 +79,37 @@ function FlyController({
   }, [activeSlug, map, pins, markerRefs]);
 
   return null;
+}
+
+/** De cerca, cada propiedad muestra lo que ocupa su terreno (si está cargado). */
+function Footprints({
+  pins,
+  onSelect,
+}: {
+  pins: Pin[];
+  onSelect?: (slug: string | null) => void;
+}) {
+  const zoom = useMapZoom();
+  if (zoom < 15) return null;
+  return (
+    <>
+      {pins.map(({ property }) =>
+        property.boundary && property.boundary.length >= 3 ? (
+          <Polygon
+            key={property.slug}
+            positions={property.boundary}
+            pathOptions={{
+              color: "#455021",
+              weight: 2,
+              fillColor: "#acb297",
+              fillOpacity: 0.4,
+            }}
+            eventHandlers={{ click: () => onSelect?.(property.slug) }}
+          />
+        ) : null
+      )}
+    </>
+  );
 }
 
 // Zoom con Ctrl/⌘ + rueda; sin Ctrl el scroll mueve la página (con aviso).
@@ -159,6 +191,7 @@ export default function PropertiesMap({
     >
       <StreetTiles />
       <WheelZoom onHint={setHint} />
+      <Footprints pins={pins} onSelect={onSelect} />
       <FlyController
         activeSlug={activeSlug}
         pins={pins}

@@ -15,7 +15,7 @@ import PropertyCard from "@/components/PropertyCard";
 import TagInput from "./TagInput";
 import ImageManager from "./ImageManager";
 import LocationPicker from "./LocationPicker";
-import BoundaryPicker from "./BoundaryPicker";
+import TerrainEditor from "./TerrainEditor";
 import AdminForm from "./AdminForm";
 import { AutoTextarea, Field, Panel, Segmented, Spinner, Switch } from "./ui";
 
@@ -381,30 +381,25 @@ export default function PropertyForm({ property }: { property?: Property }) {
               </div>
             </details>
 
-            {/* Contorno del lote — dibujar sobre el satélite (ideal para terrenos) */}
+            {/* Terreno: lo que ocupa la propiedad, para mostrarlo en la ficha. */}
             <div className="mt-6 border-t border-moss-600/10 pt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="admin-label">Contorno del terreno (opcional)</span>
-                {boundary.length >= 3 ? (
-                  <span className="text-xs font-medium text-moss-600">
-                    ✓ Dibujado ({boundary.length} esquinas)
-                  </span>
-                ) : boundary.length > 0 ? (
-                  <span className="text-xs text-[#7a5310]">
-                    Faltan esquinas: mínimo 3
-                  </span>
-                ) : null}
+                <span className="admin-label">Terreno en el mapa (opcional)</span>
+                {boundary.length >= 3 && (
+                  <span className="text-xs font-medium text-moss-600">✓ Marcado</span>
+                )}
               </div>
               <p className="mb-3 mt-1 text-xs leading-relaxed text-ink-soft/60">
-                Marcá los límites del terreno sobre la foto satelital: en la ficha
-                se ve exactamente lo que ocupa. Ideal para lotes y fincas.
+                Marcá lo que ocupa la propiedad: en la ficha se ve sobre la foto
+                satelital, con sus medidas. Para un lote común alcanza con el frente
+                y el fondo.
               </p>
               {coords ? (
-                <BoundaryPicker
-                  center={coords}
-                  area={areaValue}
-                  boundary={boundary}
+                <TerrainEditor
+                  pin={coords}
+                  value={boundary}
                   onChange={setBoundary}
+                  declaredArea={areaValue}
                 />
               ) : (
                 <p className="rounded-xl border border-dashed border-moss-600/20 bg-white/30 px-4 py-6 text-center text-sm text-ink-soft/60">
