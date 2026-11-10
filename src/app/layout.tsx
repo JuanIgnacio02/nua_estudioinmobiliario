@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s · NÚA Estudio Inmobiliario",
   },
   description:
-    "Asesoramiento inmobiliario profesional y personalizado en San Rafael y toda Mendoza. Compra, venta, tasaciones y alquileres con confianza, transparencia y acompañamiento real.",
+    "Inmobiliaria en San Rafael, Mendoza: compra, venta, alquileres y tasaciones con asesoramiento personalizado, transparencia y acompañamiento real.",
   keywords: [
     "inmobiliaria San Rafael",
     "propiedades Mendoza",
@@ -40,6 +40,11 @@ export const metadata: Metadata = {
     locale: "es_AR",
     type: "website",
   },
+  // Google Search Console: el código de verificación se pega en Vercel como
+  // variable de entorno GOOGLE_SITE_VERIFICATION (no hace falta tocar código).
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export default function RootLayout({

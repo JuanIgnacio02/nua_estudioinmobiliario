@@ -7,6 +7,7 @@ import LoteoMasterPlanEmbed from "@/components/LoteoMasterPlanEmbed";
 import { getStore } from "@/lib/store";
 import { findLoteo, loteoStats, LOT_STATUS_LABELS } from "@/lib/loteos";
 import { plural, placeLabel } from "@/lib/properties";
+import { metaDescription } from "@/lib/seo";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
 // purga la caché, así que los cambios se ven al instante igual.
@@ -29,9 +30,10 @@ export async function generateMetadata({
   if (!loteo) return { title: "Loteo no encontrado" };
   return {
     title: loteo.title,
-    description:
-      loteo.description ??
-      `Plano interactivo del ${loteo.title} en ${loteo.city}. Elegí tu lote.`,
+    description: metaDescription(
+      loteo.description ?? `Plano interactivo del ${loteo.title} en ${loteo.city}. Elegí tu lote.`
+    ),
+    alternates: { canonical: `/lotes/${loteo.slug}` },
   };
 }
 

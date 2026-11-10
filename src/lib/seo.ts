@@ -105,3 +105,15 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
     })),
   };
 }
+
+/**
+ * Descripción para Google: ~155 caracteres, cortada en una palabra. Google
+ * muestra eso; el resto se pierde (antes se mandaba la descripción entera,
+ * de hasta 1.800 caracteres).
+ */
+export function metaDescription(text: string, max = 155) {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max * 0.6)).replace(/[\s,.;:·-]+$/, "")}…`;
+}

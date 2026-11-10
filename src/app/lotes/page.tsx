@@ -13,6 +13,7 @@ import { plural, placeLabel } from "@/lib/properties";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/lotes" },
   title: "Loteos y desarrollos",
   description:
     "Elegí tu lote sobre el plano satelital. Loteos y desarrollos en San Rafael y Mendoza, con disponibilidad y precios en tiempo real.",

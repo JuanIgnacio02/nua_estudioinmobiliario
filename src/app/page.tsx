@@ -15,6 +15,8 @@ import { pickFeatured, publishedProperties } from "@/lib/properties";
 // purga la caché, así que los cambios se ven al instante igual.
 export const revalidate = 300;
 
+export const metadata = { alternates: { canonical: "/" } };
+
 export default async function Home() {
   const { properties: all, settings } = await getStore();
   const properties = publishedProperties(all);

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { track } from "@/lib/track";
+import { useRef, useState } from "react";
+import { sendLead, track } from "@/lib/track";
+import { Honeypot, PrivacyNote } from "@/components/LeadFormExtras";
 
 const TYPES = ["Casa", "Departamento", "Terreno / lote", "Finca", "Local / comercial", "Otro"];
 const GOALS = ["Vender", "Alquilar", "Solo saber el valor"];
@@ -21,6 +22,8 @@ export default function AppraisalForm({ phoneHref }: { phoneHref: string }) {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const trap = useRef<HTMLInputElement>(null);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const property = [
@@ -39,6 +42,19 @@ export default function AppraisalForm({ phoneHref }: { phoneHref: string }) {
       contact.join("\n"),
     ].join("\n\n");
     track("tasacion");
+    sendLead({
+      kind: "tasacion",
+      name: form.name,
+      phone: form.phone,
+      message: form.notes,
+      details: {
+        tipo: form.type,
+        para: form.goal,
+        ubicacion: form.address,
+        ...(form.area ? { superficie: `${form.area} m²` } : {}),
+      },
+      empresa: trap.current?.value,
+    });
     window.open(`https://wa.me/${phoneHref}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -46,7 +62,8 @@ export default function AppraisalForm({ phoneHref }: { phoneHref: string }) {
   const label = "text-eyebrow text-sage-500";
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 grid gap-6 sm:grid-cols-2">
+    <form onSubmit={onSubmit} className="relative mt-8 grid gap-6 sm:grid-cols-2">
+      <Honeypot inputRef={trap} />
       <label className="block">
         <span className={label}>Tipo de propiedad</span>
         <select value={form.type} onChange={set("type")} className={`${field} cursor-pointer`}>
@@ -115,6 +132,7 @@ export default function AppraisalForm({ phoneHref }: { phoneHref: string }) {
           Pedir tasación por WhatsApp
           <span className="transition-transform group-hover:translate-x-1">→</span>
         </button>
+        <PrivacyNote className="mt-3" />
       </div>
     </form>
   );

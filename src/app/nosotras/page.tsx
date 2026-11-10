@@ -10,6 +10,7 @@ import { getStore } from "@/lib/store";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/nosotras" },
   title: "Sobre nosotras",
   description:
     "Conocé a NÚA Estudio Inmobiliario: socias de confianza en San Rafael y toda Mendoza. Cercanía, transparencia, compromiso y acompañamiento real en cada decisión.",

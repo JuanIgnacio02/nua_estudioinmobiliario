@@ -13,6 +13,7 @@ import { getStore } from "@/lib/store";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/propiedades" },
   title: "Propiedades",
   description:
     "Explorá casas, departamentos, terrenos y fincas en venta y alquiler en San Rafael y toda Mendoza. Filtrá por operación, tipo, zona y precio.",
@@ -43,7 +44,7 @@ export default async function PropiedadesPage() {
               text="Encontrá tu propiedad"
               className="text-display font-display text-moss-900"
             />
-            <p className="mt-8 max-w-xl text-lg text-moss-900/70">
+            <p className="mt-8 max-w-xl text-lg text-moss-900/85">
               Búsqueda inteligente con filtros por operación, tipo, zona y
               precio. Ordená por destacadas, precio o superficie.
             </p>

@@ -11,6 +11,7 @@ import {
 } from "@/lib/properties";
 import { loteoStats } from "@/lib/loteos";
 import { getStatsSummary } from "@/lib/stats";
+import { countNewLeads } from "@/lib/leads";
 import VisitsChart from "@/components/admin/VisitsChart";
 import FeaturedOrder from "@/components/admin/FeaturedOrder";
 
@@ -39,9 +40,10 @@ function greeting() {
 }
 
 export default async function AdminDashboard() {
-  const [{ properties, loteos, settings }, stats] = await Promise.all([
+  const [{ properties, loteos, settings }, stats, newLeads] = await Promise.all([
     getStore(),
     getStatsSummary(30),
+    countNewLeads().catch(() => 0),
   ]);
   const publicadas = publishedProperties(properties);
   const titleOf = new Map(properties.map((p) => [p.slug, p]));
@@ -116,6 +118,25 @@ export default async function AdminDashboard() {
           </Link>
         </div>
       </header>
+
+      {/* Consultas sin atender: lo primero que hay que ver al entrar. */}
+      {newLeads > 0 && (
+        <Link
+          href="/admin/consultas"
+          className="glass-panel glass-card mt-8 flex items-center gap-4 border-[#d9a441]/40 px-5 py-4"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d9a441] font-semibold text-moss-900">
+            {newLeads}
+          </span>
+          <span className="flex-1">
+            <span className="block font-medium text-ink">
+              {newLeads === 1 ? "Tenés 1 consulta nueva" : `Tenés ${newLeads} consultas nuevas`}
+            </span>
+            <span className="text-sm text-ink-soft/65">Entraron por la web y todavía nadie las respondió.</span>
+          </span>
+          <span className="text-sm font-medium text-moss-700">Ver →</span>
+        </Link>
+      )}
 
       {/* KPIs */}
       <div className="mt-10 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">

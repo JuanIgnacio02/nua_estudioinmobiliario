@@ -29,7 +29,7 @@ import {
 } from "@/lib/properties";
 import { getStore } from "@/lib/store";
 import JsonLd from "@/components/JsonLd";
-import { breadcrumbJsonLd, listingJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, listingJsonLd, metaDescription } from "@/lib/seo";
 
 // Cacheada y revalidada cada 5 min. Al guardar en el admin, revalidateAll()
 // purga la caché, así que los cambios se ven al instante igual.
@@ -50,11 +50,15 @@ export async function generateMetadata({
   const { properties } = await getStore();
   const p = findProperty(publishedProperties(properties), slug);
   if (!p) return { title: "Propiedad no encontrada" };
+  // Primero los datos que se buscan (tipo, zona, precio, m²), después el texto.
+  const description = metaDescription(
+    `${TYPE_LABELS[p.type]} en ${OPERATION_LABELS[p.operation].toLowerCase()} en ${placeLabel(p.zone, p.city)} · ${formatPrice(p)}${p.area > 0 ? ` · ${p.area.toLocaleString("es-AR")} m²` : ""}. ${p.description}`
+  );
   return {
     title: p.title,
-    description: p.description,
+    description,
     // La imagen la pone opengraph-image.tsx (tarjeta PNG con foto y precio).
-    openGraph: { title: p.title, description: p.description },
+    openGraph: { title: p.title, description },
     alternates: { canonical: `/propiedades/${p.slug}` },
   };
 }

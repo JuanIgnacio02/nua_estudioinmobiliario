@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import { logout } from "@/app/admin/auth-actions";
+import { newLeadsCountAction } from "@/app/admin/actions";
 
 const NAV = [
   { label: "Dashboard", href: "/admin", icon: "grid" },
+  { label: "Consultas", href: "/admin/consultas", icon: "inbox" },
   { label: "Propiedades", href: "/admin/propiedades", icon: "home" },
   { label: "Loteos", href: "/admin/loteos", icon: "map" },
   { label: "Contacto", href: "/admin/contacto", icon: "phone" },
@@ -16,6 +18,9 @@ const NAV = [
 
 const ICONS: Record<string, React.ReactNode> = {
   grid: <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />,
+  inbox: (
+    <path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1Z" />
+  ),
   home: <path d="M3 10.5 12 3l9 7.5M5 9v11h14V9" />,
   map: (
     <path d="m9 20-6 2V6l6-2m0 16 6 2m-6-2V4m6 18 6-2V4l-6 2m0 16V6m0 0L9 4" />
@@ -31,6 +36,18 @@ const ICONS: Record<string, React.ReactNode> = {
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  // Consultas sin atender: se vuelve a preguntar en cada cambio de pantalla.
+  const [newLeads, setNewLeads] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    newLeadsCountAction()
+      .then((n) => alive && setNewLeads(n))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
@@ -59,9 +76,12 @@ export default function AdminSidebar() {
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls="admin-nav"
-          aria-label={open ? "Cerrar menú" : "Abrir menú"}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-moss-700 transition-colors hover:bg-white/60"
+          aria-label={open ? "Cerrar menú" : newLeads > 0 ? `Abrir menú (${newLeads} consultas nuevas)` : "Abrir menú"}
+          className="relative flex h-10 w-10 items-center justify-center rounded-full text-moss-700 transition-colors hover:bg-white/60"
         >
+          {!open && newLeads > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#d9a441] ring-2 ring-[#c5cdb2]" aria-hidden />
+          )}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
             {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
@@ -110,6 +130,14 @@ export default function AdminSidebar() {
                   {ICONS[item.icon]}
                 </svg>
                 {item.label}
+                {item.href === "/admin/consultas" && newLeads > 0 && (
+                  <span
+                    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d9a441] px-1.5 text-[11px] font-semibold text-moss-900"
+                    aria-label={`${newLeads} nuevas`}
+                  >
+                    {newLeads}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

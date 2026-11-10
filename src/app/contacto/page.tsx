@@ -12,6 +12,7 @@ import { agencyJsonLd } from "@/lib/seo";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contacto" },
   title: "Contacto",
   description:
     "Contactá a NÚA Estudio Inmobiliario. Escribinos por email o WhatsApp y te asesoramos para comprar, vender o alquilar en San Rafael y toda Mendoza.",

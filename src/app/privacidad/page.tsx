@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 
 /*
  * Redactada a partir de lo que el sitio hace realmente (verificado en el
- * código): los formularios no se guardan en ningún servidor, solo arman un
- * mensaje de WhatsApp que envía el propio visitante; no hay cookies para los
+ * código): los formularios abren WhatsApp y además guardan la consulta en la
+ * base (lib/leads.ts, tabla site_leads); no hay cookies para los
  * visitantes; los mapas se piden a Esri desde el navegador. Las estadísticas
  * son contadores anónimos (lib/stats.ts) y las favoritas viven en localStorage.
  * Conviene que la revise un profesional y sumar la razón social y el CUIT.
@@ -42,7 +42,11 @@ export default async function PrivacidadPage() {
     },
     {
       title: "Qué datos recibimos",
-      body: "Los formularios del sitio (contacto, consulta por una propiedad y pedido de tasación) piden datos como nombre, email, teléfono, la dirección de tu propiedad y un mensaje. Esos datos no se guardan en este sitio ni se envían a nuestros servidores: al enviar el formulario se abre WhatsApp con el mensaje ya escrito, y sos vos quien decide mandarlo. Si nos escribís por email o WhatsApp, recibimos los datos que vos elijas incluir.",
+      body: "Los formularios del sitio (consulta por una propiedad, contacto y pedido de tasación) piden datos como nombre, email, teléfono, la dirección de tu propiedad y un mensaje. Al enviarlos, se abre WhatsApp con el mensaje ya escrito y además guardamos esos mismos datos en nuestra base, para poder responderte y hacer el seguimiento de tu consulta. Si nos escribís directamente por email o WhatsApp, recibimos los datos que vos elijas incluir.",
+    },
+    {
+      title: "Dónde y cuánto tiempo se guardan",
+      body: "Las consultas se guardan en una base de datos (Supabase) a la que solo accede el equipo de NÚA desde su panel interno. Las conservamos mientras dure la consulta o la operación y como máximo dos años; después las borramos. Podés pedirnos en cualquier momento que borremos las tuyas.",
     },
     {
       title: "Para qué los usamos",

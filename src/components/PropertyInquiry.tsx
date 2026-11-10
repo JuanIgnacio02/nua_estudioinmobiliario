@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { propertySlugFromPath, track } from "@/lib/track";
+import { useRef, useState } from "react";
+import { propertySlugFromPath, sendLead, track } from "@/lib/track";
+import { Honeypot, PrivacyNote } from "@/components/LeadFormExtras";
 
 export default function PropertyInquiry({
   propertyTitle,
@@ -23,17 +24,22 @@ export default function PropertyInquiry({
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const trap = useRef<HTMLInputElement>(null);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const text = encodeURIComponent(
       `${form.message}\n\nNombre: ${form.name}\nEmail: ${form.email}\nTel: ${form.phone}`
     );
-    track("whatsapp", propertySlugFromPath(window.location.pathname));
+    const slug = propertySlugFromPath(window.location.pathname);
+    track("whatsapp", slug);
+    sendLead({ kind: "consulta", ...form, slug, empresa: trap.current?.value });
     window.open(`https://wa.me/${phoneHref}?text=${text}`, "_blank");
   };
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-6 sm:grid-cols-2">
+    <form onSubmit={onSubmit} className="relative grid gap-6 sm:grid-cols-2">
+      <Honeypot inputRef={trap} />
       <label className="block">
         <span className="text-eyebrow text-sage-500">Nombre</span>
         <input
@@ -82,9 +88,7 @@ export default function PropertyInquiry({
           Solicitar información
           <span className="transition-transform group-hover:translate-x-1">→</span>
         </button>
-        <p className="mt-3 text-xs text-ink-soft/50">
-          Se abrirá WhatsApp con tu consulta lista para enviar.
-        </p>
+        <PrivacyNote className="mt-3" />
       </div>
     </form>
   );

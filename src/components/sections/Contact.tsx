@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Reveal from "@/components/anim/Reveal";
 import { defaultSettings, type SiteSettings } from "@/lib/properties";
-import { track } from "@/lib/track";
+import { sendLead, track } from "@/lib/track";
+import { Honeypot, PrivacyNote } from "@/components/LeadFormExtras";
 
 export default function Contact({
   contact = defaultSettings.contact,
@@ -23,12 +24,15 @@ export default function Contact({
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const trap = useRef<HTMLInputElement>(null);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const text = encodeURIComponent(
       `Hola NÚA, soy ${form.name}.\n${form.message}\n\nEmail: ${form.email}\nTel: ${form.phone}`
     );
     track("whatsapp");
+    sendLead({ kind: "contacto", ...form, empresa: trap.current?.value });
     window.open(`https://wa.me/${CONTACT.phoneHref}?text=${text}`, "_blank");
   };
 
@@ -82,8 +86,9 @@ export default function Contact({
           <Reveal
             as="form"
             onSubmit={onSubmit}
-            className="rounded-3xl border border-moss-600/10 bg-mint-50/60 p-6 backdrop-blur-sm md:p-10"
+            className="relative rounded-3xl border border-moss-600/10 bg-mint-50/60 p-6 backdrop-blur-sm md:p-10"
           >
+            <Honeypot inputRef={trap} />
             <div className="grid gap-6 sm:grid-cols-2">
               <Field label="Nombre completo" htmlFor="name">
                 <input
@@ -140,9 +145,7 @@ export default function Contact({
                 →
               </span>
             </button>
-            <p className="mt-4 text-xs text-ink-soft/50">
-              Se abrirá WhatsApp con tu mensaje listo para enviar.
-            </p>
+            <PrivacyNote className="mt-4" />
           </Reveal>
         </div>
       </div>

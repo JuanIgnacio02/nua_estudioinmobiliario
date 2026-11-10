@@ -8,6 +8,9 @@
   [`supabase/site_stats.sql`](supabase/site_stats.sql) en el SQL Editor de
   Supabase. Mientras no exista, los contadores se guardan en la fila
   `site_store` `id = 2` (formato anterior); el SQL los pasa a la tabla nueva.
+- `site_leads`: la bandeja de consultas (formularios de la web). Se crea
+  corriendo **una vez** [`supabase/site_leads.sql`](supabase/site_leads.sql).
+  Mientras no exista, se guardan en la fila `site_store` `id = 3`.
 - Un workflow diario (`.github/workflows/keep-alive.yml`) consulta la base para
   que el plan gratuito no la pause.
 

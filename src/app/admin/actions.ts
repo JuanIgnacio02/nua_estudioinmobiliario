@@ -25,6 +25,13 @@ import {
 } from "@/lib/properties";
 import { nearestOnLines, type StreetHint } from "@/lib/geo";
 import {
+  countNewLeads,
+  deleteLead,
+  LEAD_STATUSES,
+  updateLead,
+  type LeadStatus,
+} from "@/lib/leads";
+import {
   polygonAreaM2,
   type Loteo,
   type Lot,
@@ -554,5 +561,41 @@ export async function uploadGenericImageAction(
     return { ok: true, image: `/images/${name}-lg.webp` };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
+  }
+}
+
+/* --------------------------- bandeja de consultas --------------------------- */
+
+const LEAD_ID = /^[0-9a-f-]{36}$/i;
+
+export async function updateLeadAction(
+  id: string,
+  patch: { status?: LeadStatus; notes?: string }
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  if (!LEAD_ID.test(id)) return { ok: false, error: "Consulta inválida" };
+  const clean: { status?: LeadStatus; notes?: string } = {};
+  if (patch.status && LEAD_STATUSES.includes(patch.status)) clean.status = patch.status;
+  if (typeof patch.notes === "string") clean.notes = patch.notes.slice(0, 4000);
+  await updateLead(id, clean);
+  revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+export async function deleteLeadAction(id: string): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  if (!LEAD_ID.test(id)) return { ok: false, error: "Consulta inválida" };
+  await deleteLead(id);
+  revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+/** Cantidad de consultas sin atender (para el globito del menú). */
+export async function newLeadsCountAction(): Promise<number> {
+  await requireAdmin();
+  try {
+    return await countNewLeads();
+  } catch {
+    return 0;
   }
 }

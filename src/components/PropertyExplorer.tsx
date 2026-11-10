@@ -278,7 +278,7 @@ export default function PropertyExplorer({
           </label>
         </div>
         <div className="no-scrollbar -mx-6 mt-2.5 flex items-center gap-2 overflow-x-auto px-6">
-          <span className="shrink-0 pr-1 text-xs text-ink-soft/65" aria-live="polite">
+          <span className="shrink-0 pr-1 text-xs text-ink-soft/80" aria-live="polite">
             {countLabel}
           </span>
           {chips.map((c) => (
@@ -365,7 +365,7 @@ export default function PropertyExplorer({
       {results.length > 0 ? (
         <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {results.map((p, i) => (
-            <PropertyCard key={p.slug} property={p} index={i} eager={i < 2} />
+            <PropertyCard key={p.slug} property={p} index={i} eager={i < 2} priority={i === 0} />
           ))}
         </div>
       ) : (

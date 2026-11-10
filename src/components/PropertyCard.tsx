@@ -27,12 +27,15 @@ export default function PropertyCard({
   property,
   index,
   eager = false,
+  priority = false,
   preview = false,
 }: {
   property: Property;
   index?: number;
   /** Cargar sin esperar al scroll (solo tarjetas visibles al abrir). */
   eager?: boolean;
+  /** La foto más importante de la pantalla: se pide antes que todo lo demás. */
+  priority?: boolean;
   /** Vista previa del admin: misma tarjeta, sin enlace. */
   preview?: boolean;
 }) {
@@ -68,7 +71,9 @@ export default function PropertyCard({
             src={property.image}
             alt={property.title}
             fill
-            loading={eager ? "eager" : "lazy"}
+            loading={eager || priority ? "eager" : "lazy"}
+            preload={priority}
+            fetchPriority={priority ? "high" : undefined}
             sizes={SIZES}
             className={`object-cover ${sold ? "grayscale-[60%]" : ""}`}
           />
@@ -148,7 +153,7 @@ export default function PropertyCard({
             <span className="font-display text-sm text-sage-400">
               {index != null ? String(index + 1).padStart(2, "0") : "—"}
             </span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-sage-500">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-sage-600">
               {TYPE_LABELS[property.type]} · {property.city}
             </span>
           </div>
@@ -157,7 +162,7 @@ export default function PropertyCard({
             {property.title}
           </h3>
 
-          <p className="mt-2 text-sm text-ink-soft/60">{property.location}</p>
+          <p className="mt-2 text-sm text-ink-soft/75">{property.location}</p>
 
           <div className="mt-5 pt-1">
             {drop && (
