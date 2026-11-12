@@ -165,13 +165,15 @@
   isolation: isolate;
   background: var(--color-bone);
 }
-/* Auroras de color: lo que el vidrio difumina. */
+/* Auroras de color de fondo. En su propia capa (translateZ): al hacer scroll
+   el navegador no la vuelve a pintar. */
 .admin-shell::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
   pointer-events: none;
+  transform: translateZ(0);
   background:
     radial-gradient(
       42rem 32rem at 12% -8%,
@@ -189,24 +191,18 @@
       transparent 64%
     );
 }
-/* Grano finísimo: le saca el plástico al degradado. */
-.admin-shell::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
+/* (Antes había una capa de "grano" fija encima del fondo: casi no se veía
+   y sumaba trabajo en cada cuadro del scroll. Se quitó.) */
 
 /* Superficie base */
 .glass-panel {
   position: relative;
   border-radius: 1.375rem;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  /* Sin backdrop-filter: con decenas de paneles, recalcular el desenfoque
+     en cada cuadro del scroll trababa el admin en PCs sin buena placa de
+     video. El fondo es un degradado suave: un blanco translúcido se ve igual. */
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 1px 2px rgba(36, 41, 15, 0.04),
@@ -214,25 +210,21 @@
 }
 
 /* Variante interactiva (tarjetas que son enlaces) */
+/* Al pasar el mouse solo se aclara el fondo. Antes además se levantaba y
+   agrandaba la sombra con transición: al hacer scroll las tarjetas pasan por
+   debajo del puntero una tras otra y cada una se repintaba entera. */
 .glass-card {
-  transition: transform 0.28s var(--ease-out-expo), box-shadow 0.28s,
-    background 0.28s;
+  transition: background-color 0.18s;
 }
 .glass-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 2px 4px rgba(36, 41, 15, 0.05),
-    0 20px 44px -16px rgba(36, 41, 15, 0.22);
+  background-color: rgba(255, 255, 255, 0.86);
 }
 
 /* Barra lateral: vidrio verde claro.
    Va bastante opaco a propósito: si es muy transparente toma el color del
    fondo y deja de distinguirse del contenido. */
 .glass-nav {
-  background: rgba(197, 205, 178, 0.88);
-  backdrop-filter: blur(30px) saturate(190%);
+  background: rgba(199, 207, 181, 0.97);
   border-right: 1px solid rgba(69, 80, 33, 0.14);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
@@ -329,8 +321,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--color-moss-700);
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(14px) saturate(160%);
+  background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.65);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
     0 4px 14px -8px rgba(36, 41, 15, 0.3);
@@ -375,8 +366,7 @@
   width: 100%;
   border-radius: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.7);
-  background-color: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(12px) saturate(150%);
+  background-color: rgba(255, 255, 255, 0.66);
   padding: 0.65rem 0.9rem;
   font-size: 0.95rem;
   color: var(--color-ink);
@@ -572,8 +562,8 @@ select.admin-input {
 /* Barra de guardado fija al pie de los formularios */
 .admin-savebar {
   border-radius: 1.25rem;
-  background: rgba(250, 250, 246, 0.82);
-  backdrop-filter: blur(20px) saturate(170%);
+  background: rgba(250, 250, 246, 0.9);
+  backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.75);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.85),

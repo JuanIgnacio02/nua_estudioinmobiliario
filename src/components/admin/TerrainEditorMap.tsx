@@ -106,10 +106,16 @@ function Fit({ points, pin, fitKey }: { points: LatLng[]; pin: LatLng; fitKey: n
   return null;
 }
 
-/** Recalcula el tamaño al entrar/salir de pantalla completa. */
+/**
+ * Al entrar/salir de pantalla completa: recalcula el tamaño y prende o apaga
+ * el zoom con la rueda. Fuera de pantalla completa la rueda tiene que mover la
+ * página: si no, al pasar el mouse por el mapa el scroll "se trababa".
+ */
 function Resize({ token }: { token: unknown }) {
   const map = useMap();
   useEffect(() => {
+    if (token) map.scrollWheelZoom.enable();
+    else map.scrollWheelZoom.disable();
     const t = setTimeout(() => map.invalidateSize({ animate: false }), 60);
     return () => clearTimeout(t);
   }, [map, token]);
@@ -186,7 +192,7 @@ export default function TerrainEditorMap(props: TerrainEditorMapProps) {
       center={props.pin}
       zoom={18}
       maxZoom={SAT_MAX_ZOOM}
-      scrollWheelZoom
+      scrollWheelZoom={false}
       style={{ height: "100%", width: "100%" }}
       className="nua-editor-map"
     >
