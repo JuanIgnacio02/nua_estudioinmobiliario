@@ -8,6 +8,7 @@ import {
   saleStatusLabel,
   isNew,
   priceDrop,
+  propertyImages,
   formatPrice,
   formatArea,
   TYPE_LABELS,
@@ -19,6 +20,7 @@ import {
 import { deletePropertyAction } from "@/app/admin/actions";
 import DeleteButton from "./DeleteButton";
 import DuplicateButton from "./DuplicateButton";
+import SocialKitButton from "./SocialKit";
 
 type EstadoFiltro = "todas" | "publicadas" | "borradores";
 
@@ -279,6 +281,13 @@ function PropertyRow({ p }: { p: Property }) {
         >
           Editar
         </span>
+        <SocialKitButton
+          variant="icon"
+          slug={p.slug}
+          title={p.title}
+          images={propertyImages(p)}
+          draft={Boolean(p.draft)}
+        />
         <DuplicateButton slug={p.slug} title={p.title} />
         <DeleteButton
           action={deletePropertyAction}
