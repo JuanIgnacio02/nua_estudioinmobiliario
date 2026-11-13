@@ -11,6 +11,7 @@ import {
 import { formatArea } from "@/lib/properties";
 import { rectBehind, rectBeside, rectCorners, type LatLng, type Rect } from "@/lib/geo";
 import TerrainEditor from "./TerrainEditor";
+import AdminSelect from "./AdminSelect";
 import { useConfirm } from "./ui";
 
 const STATUSES: LotStatus[] = ["disponible", "reservado", "vendido"];
@@ -205,19 +206,16 @@ export default function LoteoLotsEditor({
                       placeholder="US$"
                       aria-label="Precio en dólares"
                     />
-                    <select
-                      value={lot.status}
-                      onChange={(e) => patch(i, { status: e.target.value as LotStatus })}
-                      onClick={(e) => e.stopPropagation()}
-                      className="admin-input px-2.5 py-1.5 text-sm"
-                      aria-label="Estado"
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {LOT_STATUS_LABELS[s]}
-                        </option>
-                      ))}
-                    </select>
+                    {/* El clic no llega a la fila (que selecciona el lote). */}
+                    <span className="contents" onClick={(e) => e.stopPropagation()}>
+                      <AdminSelect
+                        value={lot.status}
+                        onChange={(v) => patch(i, { status: v as LotStatus })}
+                        className="px-2.5 py-1.5 text-sm"
+                        ariaLabel="Estado"
+                        options={STATUSES.map((st) => ({ value: st, label: LOT_STATUS_LABELS[st] }))}
+                      />
+                    </span>
                   </div>
                 )}
               </div>

@@ -21,6 +21,7 @@ import { deletePropertyAction } from "@/app/admin/actions";
 import DeleteButton from "./DeleteButton";
 import DuplicateButton from "./DuplicateButton";
 import SocialKitButton from "./SocialKit";
+import AdminSelect from "./AdminSelect";
 
 type EstadoFiltro = "todas" | "publicadas" | "borradores";
 
@@ -100,32 +101,33 @@ export default function PropertyBrowser({
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 md:flex">
-            <select
+            <AdminSelect
               value={operacion}
-              onChange={(e) => setOperacion(e.target.value as Operation | "todas")}
-              className="admin-input text-sm md:w-auto"
-              aria-label="Filtrar por operación"
-            >
-              <option value="todas">Operación</option>
-              {(Object.keys(OPERATION_LABELS) as Operation[]).map((o) => (
-                <option key={o} value={o}>
-                  {OPERATION_LABELS[o]}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(v) => setOperacion(v as Operation | "todas")}
+              className="text-sm md:w-auto md:min-w-[10rem]"
+              ariaLabel="Filtrar por operación"
+              emptyValue="todas"
+              placeholder="Operación"
+              options={[
+                { value: "todas", label: "Todas las operaciones" },
+                ...(Object.keys(OPERATION_LABELS) as Operation[]).map((o) => ({
+                  value: o,
+                  label: OPERATION_LABELS[o],
+                })),
+              ]}
+            />
+            <AdminSelect
               value={tipo}
-              onChange={(e) => setTipo(e.target.value as PropertyType | "todos")}
-              className="admin-input text-sm md:w-auto"
-              aria-label="Filtrar por tipo"
-            >
-              <option value="todos">Tipo</option>
-              {tiposUsados.map((t) => (
-                <option key={t} value={t}>
-                  {TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setTipo(v as PropertyType | "todos")}
+              className="text-sm md:w-auto md:min-w-[10rem]"
+              ariaLabel="Filtrar por tipo"
+              emptyValue="todos"
+              placeholder="Tipo"
+              options={[
+                { value: "todos", label: "Todos los tipos" },
+                ...tiposUsados.map((t) => ({ value: t, label: TYPE_LABELS[t] })),
+              ]}
+            />
           </div>
         </div>
 

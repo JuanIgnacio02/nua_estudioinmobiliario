@@ -21,10 +21,16 @@ import ImageManager from "./ImageManager";
 import LocationPicker from "./LocationPicker";
 import TerrainEditor from "./TerrainEditor";
 import AdminForm from "./AdminForm";
+import AdminSelect from "./AdminSelect";
 import { AutoTextarea, Field, Panel, Segmented, Spinner, Switch } from "./ui";
 
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const PERIODS = Object.keys(PRICE_PERIOD_LABELS) as PricePeriod[];
+const OPERATION_OPTIONS = OPERATIONS.map((o) => ({ value: o, label: OPERATION_LABELS[o] }));
+const TYPE_OPTION_GROUPS = TYPE_GROUPS.map((g) => ({
+  label: g.label,
+  options: g.types.map((t) => ({ value: t, label: TYPE_LABELS[t] })),
+}));
 
 /** Parse "lat, lng" (como copia Google Maps) a [lat, lng]. Tolera coma o espacio. */
 function parseLatLng(s: string): [number, number] | null {
@@ -183,34 +189,18 @@ export default function PropertyForm({ property }: { property?: Property }) {
               </Field>
               <div className="grid gap-5 sm:grid-cols-3">
                 <Field label="Operación">
-                  <select
+                  <AdminSelect
                     name="operation"
                     defaultValue={property?.operation ?? "venta"}
-                    className="admin-input"
-                  >
-                    {OPERATIONS.map((o) => (
-                      <option key={o} value={o}>
-                        {OPERATION_LABELS[o]}
-                      </option>
-                    ))}
-                  </select>
+                    options={OPERATION_OPTIONS}
+                  />
                 </Field>
                 <Field label="Tipo">
-                  <select
+                  <AdminSelect
                     name="type"
                     defaultValue={property?.type ?? "casa"}
-                    className="admin-input"
-                  >
-                    {TYPE_GROUPS.map((g) => (
-                      <optgroup key={g.label} label={g.label}>
-                        {g.types.map((t) => (
-                          <option key={t} value={t}>
-                            {TYPE_LABELS[t]}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                    groups={TYPE_OPTION_GROUPS}
+                  />
                 </Field>
                 <div>
                   <Field

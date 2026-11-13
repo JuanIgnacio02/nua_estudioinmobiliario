@@ -13,6 +13,7 @@ import {
   type Property,
 } from "@/lib/properties";
 import PropertyCard from "@/components/PropertyCard";
+import { menuColumns } from "@/lib/menu";
 
 type SortKey = "featured" | "price-asc" | "price-desc" | "area-desc";
 
@@ -247,9 +248,9 @@ export default function PropertyExplorer({
 
   const countLabel = `${results.length} ${results.length === 1 ? "propiedad" : "propiedades"}`;
   const priceHeading = operation === "alquiler" ? "Alquiler por mes" : "Venta";
-  // Con muchos tipos o zonas, el menú va en dos columnas.
-  const wideTypes = typeCount > 6;
-  const wideZones = zones.length > 8;
+  // Con muchos tipos o zonas, el menú va en columnas (más cuadrado, sin scroll).
+  const typeCols = menuColumns(typeCount + (typeGroups.length > 1 ? typeGroups.length : 0));
+  const zoneCols = menuColumns(zones.length);
 
   /* --------------------- Celular: opciones como chips --------------------- */
   const sheetFields = (
@@ -275,7 +276,7 @@ export default function PropertyExplorer({
           Todos
         </Chip>
         {typeGroups.map((g) => (
-          <ChipGroup key={g.label} label={wideTypes && typeGroups.length > 1 ? g.label : null}>
+          <ChipGroup key={g.label} label={typeCount > 6 && typeGroups.length > 1 ? g.label : null}>
             {g.types.map((t) => (
               <Chip
                 key={t}
@@ -461,7 +462,7 @@ export default function PropertyExplorer({
           <FilterMenu
             {...menuProps("tipo")}
             divider
-            wide={wideTypes}
+            cols={typeCols}
             label="Tipo"
             value={effectiveType === "all" ? "Todos" : TYPE_LABELS[effectiveType]}
             active={effectiveType !== "all"}
@@ -469,7 +470,7 @@ export default function PropertyExplorer({
             <MenuOption selected={effectiveType === "all"} onClick={choose(() => setType("all"))}>
               Todos los tipos
             </MenuOption>
-            <div className={wideTypes ? "columns-2 gap-1" : ""}>
+            <div className={COLUMN_CLASS[typeCols]}>
               {typeGroups.map((g) => (
                 <div key={g.label} className="break-inside-avoid">
                   {typeGroups.length > 1 && <MenuHeading>{g.label}</MenuHeading>}
@@ -491,7 +492,7 @@ export default function PropertyExplorer({
           <FilterMenu
             {...menuProps("zona")}
             divider
-            wide={wideZones}
+            cols={zoneCols}
             label="Zona"
             value={zone === "all" ? "Todas" : zone}
             active={zone !== "all"}
@@ -499,7 +500,7 @@ export default function PropertyExplorer({
             <MenuOption selected={zone === "all"} onClick={choose(() => setZone("all"))}>
               Todas las zonas
             </MenuOption>
-            <div className={wideZones ? "columns-2 gap-1" : ""}>
+            <div className={COLUMN_CLASS[zoneCols]}>
               {zones.map((z) => (
                 <MenuOption
                   key={z}
@@ -643,6 +644,18 @@ export default function PropertyExplorer({
 
 /* ------------------------------ piezas ------------------------------ */
 
+/** Columnas del contenido y ancho del menú según cuántas columnas lleva. */
+const COLUMN_CLASS: Record<number, string> = {
+  1: "",
+  2: "columns-2 gap-1 [&>*]:break-inside-avoid",
+  3: "columns-2 gap-1 lg:columns-3 [&>*]:break-inside-avoid",
+};
+const MENU_WIDTH: Record<number, string> = {
+  1: "w-64",
+  2: "w-[30rem]",
+  3: "w-[30rem] lg:w-[42rem]",
+};
+
 function ChevronIcon({ className = "" }: { className?: string }) {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -677,7 +690,7 @@ function FilterMenu({
   open,
   onToggle,
   divider = false,
-  wide = false,
+  cols = 1,
   align = "left",
   children,
 }: {
@@ -688,7 +701,8 @@ function FilterMenu({
   open: boolean;
   onToggle: () => void;
   divider?: boolean;
-  wide?: boolean;
+  /** Columnas del menú (con muchas opciones, más ancho y menos alto). */
+  cols?: number;
   align?: "left" | "right";
   children: ReactNode;
 }) {
@@ -734,7 +748,7 @@ function FilterMenu({
           data-lenis-prevent
           className={`nua-pop absolute top-[calc(100%+0.6rem)] z-40 max-h-[min(70vh,34rem)] overflow-y-auto rounded-3xl border border-moss-600/10 bg-bone p-2 shadow-[0_28px_60px_-28px_rgba(36,41,15,0.5)] ${
             align === "right" ? "right-0 origin-top-right" : "left-0 origin-top-left"
-          } ${wide ? "w-[30rem]" : "w-64"}`}
+          } ${MENU_WIDTH[cols] ?? MENU_WIDTH[1]} max-w-[calc(100vw-2rem)]`}
         >
           {children}
         </div>

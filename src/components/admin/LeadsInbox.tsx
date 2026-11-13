@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Lead, LeadStatus } from "@/lib/leads";
 import { deleteLeadAction, updateLeadAction } from "@/app/admin/actions";
 import { toast } from "./Toaster";
+import AdminSelect from "./AdminSelect";
 import { useConfirm } from "./ui";
 
 const STATUS_LABEL: Record<LeadStatus, string> = {
@@ -226,21 +227,19 @@ function LeadCard({
           {KIND_LABEL[l.kind]}
         </span>
         <span className="text-xs text-ink-soft/55">{when(l.createdAt)}</span>
-        <label className="ml-auto">
-          <span className="sr-only">Estado</span>
-          <select
+        <div className="ml-auto">
+          <AdminSelect
             value={l.status}
-            onChange={(e) => setStatus(e.target.value as LeadStatus)}
+            onChange={(v) => setStatus(v as LeadStatus)}
             disabled={pending}
-            className="admin-input py-1.5 pl-3 text-xs"
-          >
-            {(Object.keys(STATUS_LABEL) as LeadStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </label>
+            ariaLabel="Estado"
+            className="py-1.5 pl-3 text-xs"
+            options={(Object.keys(STATUS_LABEL) as LeadStatus[]).map((st) => ({
+              value: st,
+              label: STATUS_LABEL[st],
+            }))}
+          />
+        </div>
       </div>
 
       <div className="mt-3 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
