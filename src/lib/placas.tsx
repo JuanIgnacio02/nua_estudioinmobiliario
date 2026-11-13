@@ -44,6 +44,7 @@ function shortTitle(title: string, max: number) {
 function specs(p: Property) {
   return [
     p.coveredArea != null ? `${formatArea(p.coveredArea)} cub.` : null,
+    p.semiCoveredArea != null ? `${formatArea(p.semiCoveredArea)} semicub.` : null,
     p.area > 0 ? `${formatArea(p.area)}${p.coveredArea != null ? " terreno" : ""}` : null,
     p.bedrooms != null ? plural(p.bedrooms, "dormitorio", "dormitorios") : null,
     p.bathrooms != null ? plural(p.bathrooms, "baño", "baños") : null,

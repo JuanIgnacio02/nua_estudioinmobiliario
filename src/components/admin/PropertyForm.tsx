@@ -3,11 +3,15 @@
 import { useState } from "react";
 import {
   TYPE_LABELS,
+  TYPE_GROUPS,
   OPERATION_LABELS,
+  PRICE_PERIOD_LABELS,
+  isRental,
   propertyImages,
   type Property,
   type SaleStatus,
   type Operation,
+  type PricePeriod,
   type PropertyType,
 } from "@/lib/properties";
 import { savePropertyAction, geocodeAction } from "@/app/admin/actions";
@@ -20,7 +24,7 @@ import AdminForm from "./AdminForm";
 import { AutoTextarea, Field, Panel, Segmented, Spinner, Switch } from "./ui";
 
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
-const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
+const PERIODS = Object.keys(PRICE_PERIOD_LABELS) as PricePeriod[];
 
 /** Parse "lat, lng" (como copia Google Maps) a [lat, lng]. Tolera coma o espacio. */
 function parseLatLng(s: string): [number, number] | null {
@@ -58,6 +62,11 @@ export default function PropertyForm({ property }: { property?: Property }) {
   const [coveredValue, setCoveredValue] = useState<number | undefined>(
     property?.coveredArea
   );
+  const [semiCoveredValue, setSemiCoveredValue] = useState<number | undefined>(
+    property?.semiCoveredArea
+  );
+  // Alquiler temporal: el precio es por noche, semana o mes.
+  const [period, setPeriod] = useState<PricePeriod>(property?.pricePeriod ?? "noche");
   const [boundary, setBoundary] = useState<[number, number][]>(property?.boundary ?? []);
   // Borrador: se guarda pero no sale en la web. Propiedades ya cargadas
   // (sin el campo) siguen publicadas.
@@ -91,18 +100,22 @@ export default function PropertyForm({ property }: { property?: Property }) {
   };
 
   const v = (k: string) => String(values?.get(k) ?? "").trim();
+  // Operación elegida ahora (el selector no es controlado: se lee del formulario).
+  const operation = (v("operation") as Operation) || property?.operation || "venta";
   const previewProperty: Property = {
     slug: property?.slug ?? "vista-previa",
     title: v("title") || "Título de la propiedad",
-    operation: (v("operation") as Operation) || property?.operation || "venta",
+    operation,
     type: (v("type") as PropertyType) || property?.type || "casa",
     price: numOrUndef(values?.get("price") ?? null) ?? 0,
+    pricePeriod: period,
     currency: "USD",
     location: location || "Dirección",
     zone: v("zone"),
     city: v("city") || "San Rafael",
     area: areaValue ?? 0,
     coveredArea: coveredValue,
+    semiCoveredArea: semiCoveredValue,
     bedrooms: numOrUndef(values?.get("bedrooms") ?? null),
     bathrooms: numOrUndef(values?.get("bathrooms") ?? null),
     services: [],
@@ -188,27 +201,58 @@ export default function PropertyForm({ property }: { property?: Property }) {
                     defaultValue={property?.type ?? "casa"}
                     className="admin-input"
                   >
-                    {TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {TYPE_LABELS[t]}
-                      </option>
+                    {TYPE_GROUPS.map((g) => (
+                      <optgroup key={g.label} label={g.label}>
+                        {g.types.map((t) => (
+                          <option key={t} value={t}>
+                            {TYPE_LABELS[t]}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </Field>
-                <Field label="Precio (US$)" hint="Vacío = «Consultar»">
-                  <input
-                    name="price"
-                    type="number"
-                    min="0"
-                    step="any"
-                    inputMode="numeric"
-                    defaultValue={property?.price || undefined}
-                    className="admin-input"
-                    placeholder="Ej: 120000"
-                  />
-                </Field>
+                <div>
+                  <Field
+                    label={operation === "alquiler" ? "Precio por mes (US$)" : "Precio (US$)"}
+                    hint={operation === "temporal" ? undefined : "Vacío = «Consultar»"}
+                  >
+                    <input
+                      name="price"
+                      type="number"
+                      min="0"
+                      step="any"
+                      inputMode="numeric"
+                      defaultValue={property?.price || undefined}
+                      className="admin-input"
+                      placeholder={operation === "venta" ? "Ej: 120000" : "Ej: 80"}
+                    />
+                  </Field>
+                  {/* Temporal: por noche, semana o mes (abajo, para no achicar el precio). */}
+                  {operation === "temporal" && (
+                    <div className="mt-2 flex items-center gap-1" role="group" aria-label="El precio es por">
+                      <input type="hidden" name="pricePeriod" value={period} />
+                      <span className="mr-0.5 text-xs text-ink-soft/60">por</span>
+                      {PERIODS.map((pp) => (
+                        <button
+                          key={pp}
+                          type="button"
+                          onClick={() => setPeriod(pp)}
+                          aria-pressed={period === pp}
+                          className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                            period === pp
+                              ? "bg-moss-600 text-mint-100"
+                              : "text-ink-soft/70 hover:bg-white/80"
+                          }`}
+                        >
+                          {pp}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
                 <Field label="Sup. del terreno (m²)">
                   <input
                     name="area"
@@ -240,6 +284,23 @@ export default function PropertyForm({ property }: { property?: Property }) {
                     placeholder="Opcional"
                   />
                 </Field>
+                <Field label="Sup. semicubierta (m²)" hint="Galerías, quinchos, cocheras techadas.">
+                  <input
+                    name="semiCoveredArea"
+                    type="number"
+                    min="0"
+                    step="any"
+                    inputMode="decimal"
+                    value={semiCoveredValue ?? ""}
+                    onChange={(e) =>
+                      setSemiCoveredValue(e.target.value === "" ? undefined : Number(e.target.value))
+                    }
+                    className="admin-input"
+                    placeholder="Opcional"
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
                 <Field label="Dormitorios">
                   <input
                     name="bedrooms"
@@ -481,7 +542,7 @@ export default function PropertyForm({ property }: { property?: Property }) {
                     options={[
                       { value: "disponible", label: "Disponible" },
                       { value: "reservada", label: "Reservada" },
-                      { value: "vendida", label: "Vendida" },
+                      { value: "vendida", label: isRental(operation) ? "Alquilada" : "Vendida" },
                     ]}
                   />
                 </div>

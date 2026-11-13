@@ -5,6 +5,7 @@ import {
   formatPrice,
   formatArea,
   publishedProperties,
+  saleStatus,
   TYPE_LABELS,
   sortByOrder,
   type PropertyType,
@@ -56,9 +57,13 @@ export default async function AdminDashboard() {
   const borradores = properties.length - publicadas.length;
   const sinMapa = properties.filter((p) => !p.coords).length;
 
-  // Cartera: solo lo que está publicado (es lo que realmente está a la venta).
-  const valorCartera = publicadas.reduce((acc, p) => acc + p.price, 0);
-  const conSuperficie = publicadas.filter((p) => p.area > 0 && p.price > 0);
+  // Cartera: lo publicado en venta y no vendido. Los alquileres no se suman:
+  // su precio es por mes o por noche.
+  const enVenta = publicadas.filter(
+    (p) => p.operation === "venta" && saleStatus(p) !== "vendida"
+  );
+  const valorCartera = enVenta.reduce((acc, p) => acc + p.price, 0);
+  const conSuperficie = enVenta.filter((p) => p.area > 0 && p.price > 0);
   const precioM2 = conSuperficie.length
     ? conSuperficie.reduce((acc, p) => acc + p.price / p.area, 0) /
       conSuperficie.length
@@ -91,7 +96,7 @@ export default async function AdminDashboard() {
     .slice(0, 5);
 
   const kpis = [
-    { label: "Valor de cartera", value: valorCartera ? moneyShort(valorCartera) : "—", sub: valorCartera ? `${money(valorCartera)} en ${publicadas.length} publicadas` : "sin propiedades publicadas" },
+    { label: "Valor de cartera", value: valorCartera ? moneyShort(valorCartera) : "—", sub: valorCartera ? `${money(valorCartera)} en ${enVenta.length} en venta` : "sin propiedades en venta" },
     { label: "Precio promedio", value: precioM2 ? `${money(precioM2)}/m²` : "—", sub: `sobre ${conSuperficie.length} con superficie` },
     { label: "Lotes disponibles", value: lotesTotal ? `${lotesDisponibles}` : "—", sub: lotesTotal ? `de ${lotesTotal} en ${loteos.length} loteo${loteos.length === 1 ? "" : "s"}` : "sin loteos cargados" },
     { label: "En borrador", value: `${borradores}`, sub: borradores ? "no se ven en la web" : "todo publicado" },

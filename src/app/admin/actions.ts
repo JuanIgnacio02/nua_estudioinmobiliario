@@ -17,9 +17,10 @@ import { cloudinaryEnabled, uploadToCloudinary } from "@/lib/cloudinary";
 import { requireAdmin } from "@/lib/admin-session";
 import {
   SALE_STATUSES,
+  isOperation,
+  isPricePeriod,
+  isPropertyType,
   type Property,
-  type Operation,
-  type PropertyType,
   type SaleStatus,
   type SiteSettings,
 } from "@/lib/properties";
@@ -251,19 +252,26 @@ export async function savePropertyAction(
 
   const lat = num(formData.get("lat"));
   const lng = num(formData.get("lng"));
+  const operation = formData.get("operation");
+  const type = formData.get("type");
+  const pricePeriod = formData.get("pricePeriod");
 
   const property: Property = {
     slug,
     title,
-    operation: (String(formData.get("operation")) as Operation) || "venta",
-    type: (String(formData.get("type")) as PropertyType) || "casa",
+    operation: isOperation(operation) ? operation : "venta",
+    type: isPropertyType(type) ? type : "casa",
     price: num(formData.get("price")) ?? 0,
+    // Solo el alquiler temporal tiene unidad (por noche, semana o mes).
+    pricePeriod:
+      operation === "temporal" && isPricePeriod(pricePeriod) ? pricePeriod : undefined,
     currency: "USD",
     location: String(formData.get("location") ?? "").trim(),
     zone: String(formData.get("zone") ?? "").trim() || "San Rafael",
     city: String(formData.get("city") ?? "").trim() || "San Rafael",
     area: num(formData.get("area")) ?? 0,
     coveredArea: num(formData.get("coveredArea")),
+    semiCoveredArea: num(formData.get("semiCoveredArea")),
     bedrooms: num(formData.get("bedrooms")),
     bathrooms: num(formData.get("bathrooms")),
     services: parseList(formData.get("services")),

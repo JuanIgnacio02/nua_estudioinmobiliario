@@ -227,6 +227,7 @@ export async function renderFichaPdf(
     p.bedrooms != null ? { v: String(p.bedrooms), l: "Dormitorios" } : null,
     p.bathrooms != null ? { v: String(p.bathrooms), l: "Baños" } : null,
     p.coveredArea != null ? { v: p.coveredArea.toLocaleString("es-AR"), l: "m² cubiertos" } : null,
+    p.semiCoveredArea != null ? { v: p.semiCoveredArea.toLocaleString("es-AR"), l: "m² semicubiertos" } : null,
     p.area > 0 ? { v: p.area.toLocaleString("es-AR"), l: p.coveredArea != null ? "m² terreno" : "m² totales" } : null,
   ].filter((x): x is { v: string; l: string } => x !== null);
   // Sin repetidos: suele haber lo mismo en amenities y en destacados.

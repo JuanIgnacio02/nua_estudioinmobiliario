@@ -1,10 +1,36 @@
-export type Operation = "venta" | "alquiler";
+export type Operation = "venta" | "alquiler" | "temporal";
 export type PropertyType =
+  // Viviendas
   | "casa"
+  | "chalet"
+  | "casa-quinta"
   | "departamento"
+  | "monoambiente"
+  | "ph"
+  | "cabana"
+  // Terrenos y campos
   | "terreno"
   | "finca"
-  | "cabanas";
+  | "campo"
+  // Comerciales
+  | "local"
+  | "oficina"
+  | "galpon"
+  | "cochera"
+  // Negocios
+  | "cabanas"
+  | "hotel"
+  | "fondo-de-comercio"
+  | "llave-de-negocio"
+  | "negocio-especial";
+
+/** Unidad del precio en alquiler temporal. */
+export type PricePeriod = "noche" | "semana" | "mes";
+export const PRICE_PERIOD_LABELS: Record<PricePeriod, string> = {
+  noche: "por noche",
+  semana: "por semana",
+  mes: "por mes",
+};
 
 export type Property = {
   slug: string;
@@ -12,12 +38,15 @@ export type Property = {
   operation: Operation;
   type: PropertyType;
   price: number; // USD
+  /** Solo alquiler temporal: el precio es por noche, semana o mes (por defecto, noche). */
+  pricePeriod?: PricePeriod;
   currency: "USD";
   location: string; // dirección legible
   zone: string; // barrio / localidad para filtro
   city: string;
   area: number; // m2 — superficie del terreno / total del lote
   coveredArea?: number; // m2 — superficie cubierta (construida)
+  semiCoveredArea?: number; // m2 — superficie semicubierta (galerías, quinchos, cocheras techadas)
   bedrooms?: number;
   bathrooms?: number;
   services: string[];
@@ -89,11 +118,16 @@ export function saleStatus(p: Pick<Property, "status">): SaleStatus {
   return p.status ?? "disponible";
 }
 
-/** "Vendida" en venta, "Alquilada" en alquiler. */
+/** Alquiler (mensual o temporal): se dice "alquilada", no "vendida". */
+export function isRental(operation: Operation | undefined) {
+  return operation === "alquiler" || operation === "temporal";
+}
+
+/** "Vendida" en venta, "Alquilada" en alquiler y alquiler temporal. */
 export function saleStatusLabel(p: Pick<Property, "status" | "operation">): string {
   const s = saleStatus(p);
   if (s === "reservada") return "Reservada";
-  if (s === "vendida") return p.operation === "alquiler" ? "Alquilada" : "Vendida";
+  if (s === "vendida") return isRental(p.operation) ? "Alquilada" : "Vendida";
   return "Disponible";
 }
 
@@ -149,18 +183,51 @@ export function pillarText(about: SiteSettings["about"], pillar: string) {
   return about.pillarTexts?.[pillar] ?? DEFAULT_PILLAR_TEXTS[pillar] ?? "";
 }
 
+/** El orden de las claves es el de los listados y selectores. */
 export const TYPE_LABELS: Record<PropertyType, string> = {
   casa: "Casa",
+  chalet: "Chalet",
+  "casa-quinta": "Casa quinta",
   departamento: "Departamento",
+  monoambiente: "Monoambiente",
+  ph: "PH",
+  cabana: "Cabaña",
   terreno: "Terreno / Lote",
   finca: "Finca",
+  campo: "Campo",
+  local: "Local comercial",
+  oficina: "Oficina",
+  galpon: "Galpón",
+  cochera: "Cochera",
   cabanas: "Complejo de cabañas",
+  hotel: "Hotel",
+  "fondo-de-comercio": "Fondo de comercio",
+  "llave-de-negocio": "Llave de negocio",
+  "negocio-especial": "Negocio especial",
 };
+
+/** Grupos para el selector de tipo del admin (son muchos para una lista suelta). */
+export const TYPE_GROUPS: { label: string; types: PropertyType[] }[] = [
+  { label: "Viviendas", types: ["casa", "chalet", "casa-quinta", "departamento", "monoambiente", "ph", "cabana"] },
+  { label: "Terrenos y campos", types: ["terreno", "finca", "campo"] },
+  { label: "Comerciales", types: ["local", "oficina", "galpon", "cochera"] },
+  { label: "Negocios", types: ["cabanas", "hotel", "fondo-de-comercio", "llave-de-negocio", "negocio-especial"] },
+];
 
 export const OPERATION_LABELS: Record<Operation, string> = {
   venta: "Venta",
   alquiler: "Alquiler",
+  temporal: "Alquiler temporal",
 };
+
+/* Validan lo que llega de un formulario o de la URL. `x in obj` no sirve:
+   también da true con "constructor" o "toString". */
+export const isPropertyType = (v: unknown): v is PropertyType =>
+  typeof v === "string" && Object.hasOwn(TYPE_LABELS, v);
+export const isOperation = (v: unknown): v is Operation =>
+  typeof v === "string" && Object.hasOwn(OPERATION_LABELS, v);
+export const isPricePeriod = (v: unknown): v is PricePeriod =>
+  typeof v === "string" && Object.hasOwn(PRICE_PERIOD_LABELS, v);
 
 /** Seed data — used to initialise the store the first time. */
 export const seedProperties: Property[] = [
@@ -401,14 +468,17 @@ export function getRelated(list: Property[], slug: string, count = 3) {
 
 /**
  * Precio para mostrar. Sin precio cargado dice "Consultar" (antes publicaba
- * "US$ 0"); los alquileres llevan "/mes".
+ * "US$ 0"); los alquileres llevan "/mes" y los temporales "/noche" (o lo que
+ * se haya elegido).
  */
 export function formatPrice(
-  p: Pick<Property, "price" | "currency"> & { operation?: Operation }
+  p: Pick<Property, "price" | "currency"> & { operation?: Operation; pricePeriod?: PricePeriod }
 ) {
   if (!p.price || p.price <= 0) return "Consultar";
   const base = `US$ ${p.price.toLocaleString("es-AR")}`;
-  return p.operation === "alquiler" ? `${base}/mes` : base;
+  if (p.operation === "alquiler") return `${base}/mes`;
+  if (p.operation === "temporal") return `${base}/${p.pricePeriod ?? "noche"}`;
+  return base;
 }
 
 /** "1 baño" / "2 baños": cantidad con el sustantivo en el número correcto. */

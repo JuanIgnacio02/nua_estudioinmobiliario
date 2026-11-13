@@ -4,7 +4,15 @@ import { useRef, useState } from "react";
 import { sendLead, track } from "@/lib/track";
 import { Honeypot, PrivacyNote } from "@/components/LeadFormExtras";
 
-const TYPES = ["Casa", "Departamento", "Terreno / lote", "Finca", "Local / comercial", "Otro"];
+const TYPES = [
+  "Casa",
+  "Departamento",
+  "Terreno / lote",
+  "Finca / campo",
+  "Local / oficina / galpón",
+  "Negocio / fondo de comercio",
+  "Otro",
+];
 const GOALS = ["Vender", "Alquilar", "Solo saber el valor"];
 
 export default function AppraisalForm({ phoneHref }: { phoneHref: string }) {

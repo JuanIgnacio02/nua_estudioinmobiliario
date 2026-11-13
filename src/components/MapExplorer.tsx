@@ -126,7 +126,9 @@ export default function MapExplorer({
               : cat === "propiedad"
                 ? "propiedades"
                 : "publicaciones"}{" "}
-            en venta en San Rafael y la región.
+            {/* Con alquileres en la lista, "en venta" no sería cierto. */}
+            {list.every((p) => p.operation === "venta") ? "en venta " : ""}
+            en San Rafael y la región.
           </p>
         </div>
 

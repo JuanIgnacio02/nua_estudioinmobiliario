@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   saleRank,
+  isOperation,
+  isPropertyType,
   TYPE_LABELS,
+  TYPE_GROUPS,
   OPERATION_LABELS,
   type Operation,
   type PropertyType,
@@ -13,14 +16,20 @@ import PropertyCard from "@/components/PropertyCard";
 
 type SortKey = "featured" | "price-asc" | "price-desc" | "area-desc";
 
-const TYPES = Object.keys(TYPE_LABELS) as PropertyType[];
 const OPERATIONS = Object.keys(OPERATION_LABELS) as Operation[];
 const SORTS: SortKey[] = ["featured", "price-asc", "price-desc", "area-desc"];
+const SORT_LABELS: Record<SortKey, string> = {
+  featured: "Destacadas",
+  "price-asc": "Menor precio",
+  "price-desc": "Mayor precio",
+  "area-desc": "Más superficie",
+};
 
 /*
  * Rangos de precio. Venta y alquiler tienen escalas muy distintas, así que
  * cada operación tiene los suyos; elegir un rango implica esa operación.
  * Las propiedades "Consultar" (sin precio) no entran en ningún rango.
+ * El alquiler temporal no tiene: mezcla precios por noche, semana y mes.
  */
 type Range = { key: string; label: string; min: number; max: number; op: Operation };
 const k = (n: number) => n.toLocaleString("es-AR");
@@ -35,6 +44,28 @@ const RANGES: Range[] = [
   { key: "alq-mas-1000", label: "Más de US$ 1.000/mes", min: 1000, max: Infinity, op: "alquiler" },
 ];
 const BEDS = ["1", "2", "3", "4"];
+
+type Facets = {
+  operation: Operation | "all";
+  type: PropertyType | "all";
+  zone: string;
+  range: Range | null;
+  beds: number;
+};
+
+/** Cumple los filtros. `skip` ignora uno: así se cuenta cuántas hay en cada
+ *  opción de ese filtro sin que la opción elegida deje todo en cero. */
+function matches(p: Property, f: Facets, skip?: keyof Facets) {
+  if (skip !== "operation" && f.operation !== "all" && p.operation !== f.operation) return false;
+  if (skip !== "type" && f.type !== "all" && p.type !== f.type) return false;
+  if (skip !== "zone" && f.zone !== "all" && p.zone !== f.zone) return false;
+  if (skip !== "range" && f.range) {
+    if (p.operation !== f.range.op || !p.price) return false;
+    if (p.price < f.range.min || p.price >= f.range.max) return false;
+  }
+  if (skip !== "beds" && f.beds && (p.bedrooms ?? 0) < f.beds) return false;
+  return true;
+}
 
 /*
  * Los filtros viven en la URL (?tipo=terreno&operacion=venta&zona=...&orden=...):
@@ -58,9 +89,9 @@ function subscribe(onChange: () => void) {
 function writeParams(changes: Record<string, string | null>) {
   const url = new URL(window.location.href);
   url.searchParams.delete("type"); // nombre viejo (links del footer)
-  for (const [k, v] of Object.entries(changes)) {
-    if (v === null) url.searchParams.delete(k);
-    else url.searchParams.set(k, v);
+  for (const [key, v] of Object.entries(changes)) {
+    if (v === null) url.searchParams.delete(key);
+    else url.searchParams.set(key, v);
   }
   window.history.replaceState(window.history.state, "", url);
   window.dispatchEvent(new Event(URL_CHANGE));
@@ -91,6 +122,28 @@ export default function PropertyExplorer({
     };
   }, [sheet]);
 
+  // Menú abierto de la barra de compu. Se cierra al tocar afuera o con Esc
+  // (y el foco vuelve al botón que lo abrió).
+  const [menu, setMenu] = useState<string | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: PointerEvent) => {
+      if (!barRef.current?.contains(e.target as Node)) setMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      barRef.current?.querySelector<HTMLButtonElement>('[aria-expanded="true"]')?.focus();
+      setMenu(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
+
   const search = useSyncExternalStore(
     subscribe,
     () => window.location.search,
@@ -99,11 +152,9 @@ export default function PropertyExplorer({
   const params = new URLSearchParams(search);
 
   const rawType = params.get("tipo") ?? params.get("type");
-  const effectiveType: PropertyType | "all" =
-    rawType && rawType in TYPE_LABELS ? (rawType as PropertyType) : "all";
+  const effectiveType: PropertyType | "all" = isPropertyType(rawType) ? rawType : "all";
   const rawOp = params.get("operacion");
-  const operation: Operation | "all" =
-    rawOp && rawOp in OPERATION_LABELS ? (rawOp as Operation) : "all";
+  const operation: Operation | "all" = isOperation(rawOp) ? rawOp : "all";
   const rawZone = params.get("zona");
   const zone = rawZone && zones.includes(rawZone) ? rawZone : "all";
   const rawSort = params.get("orden") as SortKey | null;
@@ -114,7 +165,23 @@ export default function PropertyExplorer({
   const rawBeds = params.get("dormitorios");
   const beds = rawBeds && BEDS.includes(rawBeds) ? Number(rawBeds) : 0;
   // Rangos que se ofrecen: los de la operación elegida (o venta si son todas).
-  const rangeOptions = RANGES.filter((r) => r.op === (operation === "alquiler" ? "alquiler" : "venta"));
+  const rangeOptions =
+    operation === "temporal"
+      ? []
+      : RANGES.filter((r) => r.op === (operation === "all" ? "venta" : operation));
+
+  const facets: Facets = { operation, type: effectiveType, zone, range, beds };
+  /** Cuántas quedarían eligiendo esa opción (con el resto de los filtros). */
+  const count = (skip: keyof Facets, test: (p: Property) => boolean) =>
+    properties.filter((p) => test(p) && matches(p, facets, skip)).length;
+
+  // Tipos agrupados, solo los que hay publicados: son muchos y una lista
+  // llena de opciones que dan vacío no sirve. El elegido por URL se ofrece igual.
+  const typeGroups = TYPE_GROUPS.map((g) => ({
+    label: g.label,
+    types: g.types.filter((t) => t === effectiveType || properties.some((p) => p.type === t)),
+  })).filter((g) => g.types.length > 0);
+  const typeCount = typeGroups.reduce((n, g) => n + g.types.length, 0);
 
   // Cambiar de operación borra un rango de precio que ya no corresponde.
   const setOperation = (v: Operation | "all") =>
@@ -130,19 +197,9 @@ export default function PropertyExplorer({
   const setSort = (v: SortKey) =>
     writeParams({ orden: v === "featured" ? null : v });
 
-  const results = useMemo(() => {
-    let list = properties.filter((p) => {
-      if (operation !== "all" && p.operation !== operation) return false;
-      if (effectiveType !== "all" && p.type !== effectiveType) return false;
-      if (zone !== "all" && p.zone !== zone) return false;
-      if (range) {
-        if (p.operation !== range.op || !p.price) return false;
-        if (p.price < range.min || p.price >= range.max) return false;
-      }
-      if (beds && (p.bedrooms ?? 0) < beds) return false;
-      return true;
-    });
-    list = [...list].sort((a, b) => {
+  const results = properties
+    .filter((p) => matches(p, facets))
+    .sort((a, b) => {
       // Disponibles primero, vendidas al final, sea cual sea el orden elegido.
       const rank = saleRank(a) - saleRank(b);
       if (rank !== 0) return rank;
@@ -157,8 +214,6 @@ export default function PropertyExplorer({
           return Number(b.featured) - Number(a.featured) || b.price - a.price;
       }
     });
-    return list;
-  }, [properties, operation, effectiveType, zone, sort, range, beds]);
 
   const reset = () =>
     writeParams({
@@ -170,8 +225,6 @@ export default function PropertyExplorer({
       dormitorios: null,
     });
 
-  // effectiveType y no `type`: `type` arranca en null ("todavía no eligió"),
-  // y comparar null con "all" mostraba "Limpiar" sin ningún filtro activo.
   const hasFilters =
     operation !== "all" ||
     effectiveType !== "all" ||
@@ -179,51 +232,7 @@ export default function PropertyExplorer({
     range !== null ||
     beds > 0;
 
-  const filterFields = (
-    <>
-      <Select
-        label="Operación"
-        value={operation}
-        onChange={(v) => setOperation(v as Operation | "all")}
-        options={[
-          ["all", "Todas"],
-          ...OPERATIONS.map((o) => [o, OPERATION_LABELS[o]] as [string, string]),
-        ]}
-      />
-      <Select
-        label="Tipo"
-        value={effectiveType}
-        onChange={(v) => setType(v as PropertyType | "all")}
-        options={[
-          ["all", "Todos"],
-          ...TYPES.map((t) => [t, TYPE_LABELS[t]] as [string, string]),
-        ]}
-      />
-      <Select
-        label="Zona"
-        value={zone}
-        onChange={setZone}
-        options={[["all", "Todas"], ...zones.map((z) => [z, z] as [string, string])]}
-      />
-      <Select
-        label="Precio"
-        value={range?.key ?? "all"}
-        onChange={setRange}
-        options={[
-          ["all", "Cualquiera"],
-          ...rangeOptions.map((r) => [r.key, r.label] as [string, string]),
-        ]}
-      />
-      <Select
-        label="Dormitorios"
-        value={beds ? String(beds) : "all"}
-        onChange={setBeds}
-        options={[["all", "Todos"], ...BEDS.map((b) => [b, `${b} o más`] as [string, string])]}
-      />
-    </>
-  );
-
-  // Filtros activos como chips que se quitan con un toque (celular).
+  // Filtros activos como chips que se quitan con un toque.
   const chips: { label: string; clear: () => void }[] = [
     ...(operation !== "all"
       ? [{ label: OPERATION_LABELS[operation], clear: () => setOperation("all") }]
@@ -237,11 +246,107 @@ export default function PropertyExplorer({
   ];
 
   const countLabel = `${results.length} ${results.length === 1 ? "propiedad" : "propiedades"}`;
+  const priceHeading = operation === "alquiler" ? "Alquiler por mes" : "Venta";
+  // Con muchos tipos o zonas, el menú va en dos columnas.
+  const wideTypes = typeCount > 6;
+  const wideZones = zones.length > 8;
+
+  /* --------------------- Celular: opciones como chips --------------------- */
+  const sheetFields = (
+    <div className="space-y-7">
+      <ChipSection title="Operación">
+        <Chip selected={operation === "all"} onClick={() => setOperation("all")}>
+          Todas
+        </Chip>
+        {OPERATIONS.map((o) => (
+          <Chip
+            key={o}
+            selected={operation === o}
+            onClick={() => setOperation(o)}
+            count={count("operation", (p) => p.operation === o)}
+          >
+            {OPERATION_LABELS[o]}
+          </Chip>
+        ))}
+      </ChipSection>
+
+      <ChipSection title="Tipo">
+        <Chip selected={effectiveType === "all"} onClick={() => setType("all")}>
+          Todos
+        </Chip>
+        {typeGroups.map((g) => (
+          <ChipGroup key={g.label} label={wideTypes && typeGroups.length > 1 ? g.label : null}>
+            {g.types.map((t) => (
+              <Chip
+                key={t}
+                selected={effectiveType === t}
+                onClick={() => setType(t)}
+                count={count("type", (p) => p.type === t)}
+              >
+                {TYPE_LABELS[t]}
+              </Chip>
+            ))}
+          </ChipGroup>
+        ))}
+      </ChipSection>
+
+      <ChipSection title="Zona">
+        <Chip selected={zone === "all"} onClick={() => setZone("all")}>
+          Todas
+        </Chip>
+        {zones.map((z) => (
+          <Chip
+            key={z}
+            selected={zone === z}
+            onClick={() => setZone(z)}
+            count={count("zone", (p) => p.zone === z)}
+          >
+            {z}
+          </Chip>
+        ))}
+      </ChipSection>
+
+      {rangeOptions.length > 0 && (
+        <ChipSection title={`Precio · ${priceHeading.toLowerCase()}`}>
+          <Chip selected={!range} onClick={() => setRange("all")}>
+            Cualquiera
+          </Chip>
+          {rangeOptions.map((r) => (
+            <Chip key={r.key} selected={range?.key === r.key} onClick={() => setRange(r.key)}>
+              {r.label}
+            </Chip>
+          ))}
+        </ChipSection>
+      )}
+
+      <ChipSection title="Dormitorios">
+        <Chip selected={!beds} onClick={() => setBeds("all")}>
+          Todos
+        </Chip>
+        {BEDS.map((b) => (
+          <Chip key={b} selected={beds === Number(b)} onClick={() => setBeds(b)}>
+            {b} o más
+          </Chip>
+        ))}
+      </ChipSection>
+    </div>
+  );
+
+  /* ------------------ Compu: menús propios de la barra ------------------ */
+  const menuProps = (id: string) => ({
+    id,
+    open: menu === id,
+    onToggle: () => setMenu(menu === id ? null : id),
+  });
+  // Elegir una opción la aplica y cierra el menú.
+  const choose = (fn: () => void) => () => {
+    fn();
+    setMenu(null);
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-6 md:px-10">
-      {/* Celular: barra compacta fija + panel de filtros desde abajo. Antes
-          eran tres filas de selectores que desaparecían al bajar. */}
+      {/* Celular: barra compacta fija + panel de filtros desde abajo. */}
       <div className="sticky top-16 z-30 -mx-6 border-b border-moss-600/10 bg-bone/90 px-6 py-3 backdrop-blur-xl md:hidden">
         <div className="flex items-center gap-3">
           <button
@@ -267,14 +372,13 @@ export default function PropertyExplorer({
               onChange={(e) => setSort(e.target.value as SortKey)}
               className="min-h-11 cursor-pointer appearance-none rounded-full border border-moss-600/15 bg-bone py-2 pl-4 pr-9 text-sm text-ink outline-none"
             >
-              <option value="featured">Destacadas</option>
-              <option value="price-asc">Menor precio</option>
-              <option value="price-desc">Mayor precio</option>
-              <option value="area-desc">Más superficie</option>
+              {SORTS.map((s) => (
+                <option key={s} value={s}>
+                  {SORT_LABELS[s]}
+                </option>
+              ))}
             </select>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-moss-600" aria-hidden>
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            <ChevronIcon className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-moss-600" />
           </label>
         </div>
         <div className="no-scrollbar -mx-6 mt-2.5 flex items-center gap-2 overflow-x-auto px-6">
@@ -282,16 +386,7 @@ export default function PropertyExplorer({
             {countLabel}
           </span>
           {chips.map((c) => (
-              <button
-                key={c.label}
-                type="button"
-                onClick={c.clear}
-                aria-label={`Quitar filtro ${c.label}`}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-mint-100 py-1.5 pl-3 pr-2 text-xs text-moss-700"
-              >
-                {c.label}
-                <span aria-hidden className="text-sm leading-none text-moss-600/70">×</span>
-              </button>
+            <ActiveChip key={c.label} label={c.label} onClear={c.clear} />
           ))}
         </div>
       </div>
@@ -307,63 +402,203 @@ export default function PropertyExplorer({
           />
           <div
             data-lenis-prevent
-            className="nua-sheet absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[1.75rem] bg-bone px-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_-20px_rgba(36,41,15,0.5)]"
+            className="nua-sheet absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-[1.75rem] bg-bone shadow-[0_-20px_50px_-20px_rgba(36,41,15,0.5)]"
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-moss-600/20" aria-hidden />
-            <div className="mb-6 flex items-center justify-between">
-              <p className="font-display text-2xl text-ink">Filtros</p>
-              {hasFilters && (
-                <button type="button" onClick={reset} className="text-sm text-moss-600 underline underline-offset-4">
-                  Limpiar todo
-                </button>
-              )}
+            <div className="px-6 pt-3">
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-moss-600/20" aria-hidden />
+              <div className="mb-5 flex items-center justify-between">
+                <p className="font-display text-2xl text-ink">Filtros</p>
+                {hasFilters && (
+                  <button type="button" onClick={reset} className="text-sm text-moss-600 underline underline-offset-4">
+                    Limpiar todo
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="grid gap-5 [&_select]:w-full">{filterFields}</div>
-            <button
-              type="button"
-              onClick={() => setSheet(false)}
-              className="mt-8 flex min-h-12 w-full items-center justify-center rounded-full bg-moss-600 px-6 text-sm font-medium text-mint-100"
-            >
-              {results.length === 0 ? "Sin resultados: probá otros filtros" : `Ver ${countLabel}`}
-            </button>
+            {/* Las opciones scrollean; el botón de abajo queda siempre a mano. */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">{sheetFields}</div>
+            <div className="border-t border-moss-600/10 px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
+              <button
+                type="button"
+                onClick={() => setSheet(false)}
+                className="flex min-h-12 w-full items-center justify-center rounded-full bg-moss-600 px-6 text-sm font-medium text-mint-100"
+              >
+                {results.length === 0 ? "Sin resultados: probá otros filtros" : `Ver ${countLabel}`}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Compu y tablet: barra completa */}
-      <div className="z-30 hidden rounded-3xl border border-moss-600/10 bg-bone/80 p-4 backdrop-blur-xl md:sticky md:top-24 md:block md:p-5">
-        <div className="flex flex-wrap items-end gap-4">
-          {filterFields}
-          <Select
-            label="Ordenar"
-            value={sort}
-            onChange={(v) => setSort(v as SortKey)}
-            options={[
-              ["featured", "Destacadas"],
-              ["price-asc", "Precio ↑"],
-              ["price-desc", "Precio ↓"],
-              ["area-desc", "Superficie ↓"],
-            ]}
-          />
-          <div className="ml-auto flex items-center gap-4 pb-1">
-            <span className="text-sm text-ink-soft/70">{countLabel}</span>
-            {hasFilters && (
-              <button
-                onClick={reset}
-                className="text-sm text-moss-600 underline-offset-4 hover:underline"
+      {/* Compu y tablet: barra fija con menús propios (los selectores del
+          sistema mostraban la letra y el azul de Windows). */}
+      <div
+        ref={barRef}
+        className="z-30 hidden rounded-[1.75rem] border border-moss-600/10 bg-bone/85 p-2 shadow-[0_18px_40px_-32px_rgba(36,41,15,0.45)] backdrop-blur-xl md:sticky md:top-24 md:block"
+      >
+        <div className="flex flex-wrap lg:flex-nowrap">
+          <FilterMenu
+            {...menuProps("operacion")}
+            label="Operación"
+            value={operation === "all" ? "Todas" : OPERATION_LABELS[operation]}
+            active={operation !== "all"}
+          >
+            <MenuOption selected={operation === "all"} onClick={choose(() => setOperation("all"))}>
+              Todas
+            </MenuOption>
+            {OPERATIONS.map((o) => (
+              <MenuOption
+                key={o}
+                selected={operation === o}
+                count={count("operation", (p) => p.operation === o)}
+                onClick={choose(() => setOperation(o))}
               >
-                Limpiar
-              </button>
-            )}
-          </div>
+                {OPERATION_LABELS[o]}
+              </MenuOption>
+            ))}
+          </FilterMenu>
+
+          <FilterMenu
+            {...menuProps("tipo")}
+            divider
+            wide={wideTypes}
+            label="Tipo"
+            value={effectiveType === "all" ? "Todos" : TYPE_LABELS[effectiveType]}
+            active={effectiveType !== "all"}
+          >
+            <MenuOption selected={effectiveType === "all"} onClick={choose(() => setType("all"))}>
+              Todos los tipos
+            </MenuOption>
+            <div className={wideTypes ? "columns-2 gap-1" : ""}>
+              {typeGroups.map((g) => (
+                <div key={g.label} className="break-inside-avoid">
+                  {typeGroups.length > 1 && <MenuHeading>{g.label}</MenuHeading>}
+                  {g.types.map((t) => (
+                    <MenuOption
+                      key={t}
+                      selected={effectiveType === t}
+                      count={count("type", (p) => p.type === t)}
+                      onClick={choose(() => setType(t))}
+                    >
+                      {TYPE_LABELS[t]}
+                    </MenuOption>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </FilterMenu>
+
+          <FilterMenu
+            {...menuProps("zona")}
+            divider
+            wide={wideZones}
+            label="Zona"
+            value={zone === "all" ? "Todas" : zone}
+            active={zone !== "all"}
+          >
+            <MenuOption selected={zone === "all"} onClick={choose(() => setZone("all"))}>
+              Todas las zonas
+            </MenuOption>
+            <div className={wideZones ? "columns-2 gap-1" : ""}>
+              {zones.map((z) => (
+                <MenuOption
+                  key={z}
+                  selected={zone === z}
+                  count={count("zone", (p) => p.zone === z)}
+                  onClick={choose(() => setZone(z))}
+                >
+                  {z}
+                </MenuOption>
+              ))}
+            </div>
+          </FilterMenu>
+
+          {rangeOptions.length > 0 && (
+            <FilterMenu
+              {...menuProps("precio")}
+              divider
+              label="Precio"
+              value={range ? range.label : "Cualquiera"}
+              active={range !== null}
+            >
+              <MenuOption selected={!range} onClick={choose(() => setRange("all"))}>
+                Cualquier precio
+              </MenuOption>
+              <MenuHeading>{priceHeading}</MenuHeading>
+              {rangeOptions.map((r) => (
+                <MenuOption
+                  key={r.key}
+                  selected={range?.key === r.key}
+                  onClick={choose(() => setRange(r.key))}
+                >
+                  {r.label}
+                </MenuOption>
+              ))}
+            </FilterMenu>
+          )}
+
+          <FilterMenu
+            {...menuProps("dormitorios")}
+            divider
+            label="Dormitorios"
+            value={beds ? `${beds} o más` : "Todos"}
+            active={beds > 0}
+          >
+            <MenuOption selected={!beds} onClick={choose(() => setBeds("all"))}>
+              Todos
+            </MenuOption>
+            {BEDS.map((b) => (
+              <MenuOption
+                key={b}
+                selected={beds === Number(b)}
+                onClick={choose(() => setBeds(b))}
+              >
+                {b} o más
+              </MenuOption>
+            ))}
+          </FilterMenu>
+
+          <FilterMenu
+            {...menuProps("orden")}
+            divider
+            align="right"
+            label="Ordenar"
+            value={SORT_LABELS[sort]}
+            active={false}
+          >
+            {SORTS.map((s) => (
+              <MenuOption key={s} selected={sort === s} onClick={choose(() => setSort(s))}>
+                {SORT_LABELS[s]}
+              </MenuOption>
+            ))}
+          </FilterMenu>
         </div>
+      </div>
+
+      {/* Compu: cantidad y filtros activos, debajo de la barra. */}
+      <div className="mt-5 hidden min-h-8 flex-wrap items-center gap-2 md:flex">
+        <span className="pr-2 text-sm text-ink-soft/70" aria-live="polite">
+          {countLabel}
+        </span>
+        {chips.map((c) => (
+          <ActiveChip key={c.label} label={c.label} onClear={c.clear} />
+        ))}
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={reset}
+            className="ml-1 text-sm text-moss-600 underline-offset-4 hover:underline"
+          >
+            Limpiar todo
+          </button>
+        )}
       </div>
 
       <h2 className="sr-only">Resultados</h2>
 
       {/* Grid */}
       {results.length > 0 ? (
-        <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 md:mt-8 lg:grid-cols-3">
           {results.map((p, i) => (
             <PropertyCard key={p.slug} property={p} index={i} eager={i < 2} priority={i === 0} />
           ))}
@@ -406,33 +641,204 @@ export default function PropertyExplorer({
   );
 }
 
-function Select({
+/* ------------------------------ piezas ------------------------------ */
+
+function ChevronIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      aria-label={`Quitar filtro ${label}`}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-mint-100 py-1.5 pl-3 pr-2 text-xs text-moss-700 transition-colors hover:bg-mint-100/70"
+    >
+      {label}
+      <span aria-hidden className="text-sm leading-none text-moss-600/70">
+        ×
+      </span>
+    </button>
+  );
+}
+
+/** Casillero de la barra: rótulo chico arriba y el valor elegido en la
+ *  tipografía de los títulos; al tocarlo abre su menú. */
+function FilterMenu({
+  id,
   label,
   value,
-  onChange,
-  options,
+  active,
+  open,
+  onToggle,
+  divider = false,
+  wide = false,
+  align = "left",
+  children,
 }: {
+  id: string;
   label: string;
   value: string;
-  onChange: (v: string) => void;
-  options: [string, string][];
+  active: boolean;
+  open: boolean;
+  onToggle: () => void;
+  divider?: boolean;
+  wide?: boolean;
+  align?: "left" | "right";
+  children: ReactNode;
 }) {
+  const panelId = `filtro-${id}`;
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[10px] uppercase tracking-[0.2em] text-sage-500">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full cursor-pointer rounded-full border border-moss-600/15 bg-bone px-4 py-2.5 text-sm text-ink outline-none transition-colors hover:border-moss-600/40 focus:border-moss-600 sm:w-auto"
+    <div
+      className={`relative min-w-[9.5rem] flex-1 ${
+        divider
+          ? "lg:before:absolute lg:before:inset-y-3 lg:before:left-0 lg:before:w-px lg:before:bg-moss-600/10 lg:before:content-['']"
+          : ""
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={panelId}
+        title={value}
+        className={`flex w-full flex-col items-start gap-1 rounded-[1.25rem] px-5 py-2.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-moss-600/30 ${
+          open ? "bg-white shadow-[0_6px_18px_-12px_rgba(36,41,15,0.4)]" : "hover:bg-white/60"
+        }`}
       >
-        {options.map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-sage-500">{label}</span>
+        <span className="flex w-full items-center gap-2">
+          <span
+            className={`truncate font-display text-[1.05rem] leading-snug ${
+              active ? "text-moss-600" : "text-ink"
+            }`}
+          >
+            {value}
+          </span>
+          <ChevronIcon
+            className={`ml-auto shrink-0 text-moss-600/55 transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </span>
+      </button>
+      {open && (
+        <div
+          id={panelId}
+          aria-label={label}
+          data-lenis-prevent
+          className={`nua-pop absolute top-[calc(100%+0.6rem)] z-40 max-h-[min(70vh,34rem)] overflow-y-auto rounded-3xl border border-moss-600/10 bg-bone p-2 shadow-[0_28px_60px_-28px_rgba(36,41,15,0.5)] ${
+            align === "right" ? "right-0 origin-top-right" : "left-0 origin-top-left"
+          } ${wide ? "w-[30rem]" : "w-64"}`}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuHeading({ children }: { children: ReactNode }) {
+  return (
+    <p className="px-3.5 pb-1 pt-3 text-[10px] uppercase tracking-[0.2em] text-sage-500">
+      {children}
+    </p>
+  );
+}
+
+function MenuOption({
+  selected,
+  count,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  count?: number;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const empty = count === 0 && !selected;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left text-sm transition-colors ${
+        selected
+          ? "bg-mint-100 font-medium text-moss-700"
+          : empty
+            ? "text-ink-soft/40 hover:bg-white"
+            : "text-ink hover:bg-white"
+      }`}
+    >
+      <span className="min-w-0 flex-1">{children}</span>
+      {selected ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      ) : count != null ? (
+        <span className="shrink-0 text-xs tabular-nums text-ink-soft/45">{count}</span>
+      ) : null}
+    </button>
+  );
+}
+
+function ChipSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset>
+      <legend className="mb-3 text-[10px] uppercase tracking-[0.2em] text-sage-500">{title}</legend>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </fieldset>
+  );
+}
+
+/** Subgrupo dentro de una sección de chips (Viviendas, Comerciales…). */
+function ChipGroup({ label, children }: { label: string | null; children: ReactNode }) {
+  if (!label) return <>{children}</>;
+  return (
+    <>
+      <p className="basis-full pt-2 text-xs text-ink-soft/55">{label}</p>
+      {children}
+    </>
+  );
+}
+
+function Chip({
+  selected,
+  count,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  count?: number;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const empty = count === 0 && !selected;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 text-sm transition-colors ${
+        selected
+          ? "border-moss-600 bg-moss-600 text-mint-100"
+          : empty
+            ? "border-moss-600/10 text-ink-soft/40"
+            : "border-moss-600/15 bg-white/50 text-ink active:bg-mint-100"
+      }`}
+    >
+      {children}
+      {count != null && (
+        <span className={`text-xs tabular-nums ${selected ? "text-mint-100/70" : "text-ink-soft/45"}`}>
+          {count}
+        </span>
+      )}
+    </button>
   );
 }

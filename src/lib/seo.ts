@@ -1,5 +1,6 @@
 import { SITE_URL } from "./site";
 import {
+  isRental,
   propertyImages,
   saleStatus,
   type Property,
@@ -38,10 +39,24 @@ export function agencyJsonLd(contact: SiteSettings["contact"]) {
 
 const SCHEMA_TYPE: Record<PropertyType, string> = {
   casa: "SingleFamilyResidence",
+  chalet: "SingleFamilyResidence",
+  "casa-quinta": "SingleFamilyResidence",
   departamento: "Apartment",
+  monoambiente: "Apartment",
+  ph: "House",
+  cabana: "House",
   terreno: "Place",
   finca: "Place",
+  campo: "Place",
+  local: "Place",
+  oficina: "Place",
+  galpon: "Place",
+  cochera: "Place",
   cabanas: "Accommodation",
+  hotel: "Hotel",
+  "fondo-de-comercio": "Place",
+  "llave-de-negocio": "Place",
+  "negocio-especial": "Place",
 };
 
 const AVAILABILITY = {
@@ -65,7 +80,7 @@ export function listingJsonLd(p: Property) {
       ...(p.price > 0 ? { price: p.price, priceCurrency: "USD" } : {}),
       availability: AVAILABILITY[saleStatus(p)],
       businessFunction:
-        p.operation === "alquiler"
+        isRental(p.operation)
           ? "http://purl.org/goodrelations/v1#LeaseOut"
           : "http://purl.org/goodrelations/v1#Sell",
       url,

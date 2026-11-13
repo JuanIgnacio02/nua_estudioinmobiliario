@@ -16,6 +16,7 @@ import {
   findProperty,
   getRelated,
   formatPrice,
+  formatArea,
   propertyImages,
   paragraphs,
   placeLabel,
@@ -95,7 +96,10 @@ export default async function PropertyDetail({
   // Christie's-style stat row: big number + small label. Keep it to 4 tiles so
   // the grid never leaves a lonely item on a second row — drop "Tipo" (already
   // shown in the eyebrow) once beds/baths/superficies fill the row.
-  const stats: { value: string; label: string }[] = [
+  // La semicubierta va como nota debajo de la cubierta: así la fila sigue
+  // en 4 casilleros. Si no hay cubierta, tiene casillero propio.
+  const semi = p.semiCoveredArea;
+  const stats: { value: string; label: string; note?: string }[] = [
     ...(p.bedrooms != null
       ? [{ value: String(p.bedrooms), label: "Dormitorios" }]
       : []),
@@ -103,8 +107,16 @@ export default async function PropertyDetail({
       ? [{ value: String(p.bathrooms), label: "Baños" }]
       : []),
     ...(p.coveredArea != null
-      ? [{ value: p.coveredArea.toLocaleString("es-AR"), label: "m² cubiertos" }]
-      : []),
+      ? [
+          {
+            value: p.coveredArea.toLocaleString("es-AR"),
+            label: "m² cubiertos",
+            note: semi != null ? `+ ${formatArea(semi)} semicubiertos` : undefined,
+          },
+        ]
+      : semi != null
+        ? [{ value: semi.toLocaleString("es-AR"), label: "m² semicubiertos" }]
+        : []),
     {
       value: p.area.toLocaleString("es-AR"),
       label: p.coveredArea != null ? "m² terreno" : "m² totales",
@@ -235,6 +247,9 @@ export default async function PropertyDetail({
                     <dt className="mt-1 text-[11px] uppercase tracking-[0.18em] text-sage-500">
                       {s.label}
                     </dt>
+                    {s.note && (
+                      <dd className="mt-1 text-xs text-ink-soft/65">{s.note}</dd>
+                    )}
                   </div>
                 ))}
               </dl>

@@ -45,7 +45,7 @@ export default async function TipoPage({ params }: { params: Promise<{ tipo: str
       path={`/propiedades/tipo/${t.slug}`}
       properties={list}
       explorerHref={`/propiedades?tipo=${type}`}
-      emptyText={`En este momento no hay ${t.noun} publicados, pero nos llegan nuevos seguido. Contanos qué buscás y te avisamos.`}
+      emptyText={`En este momento no hay ${t.noun} ${t.fem ? "publicadas" : "publicados"}, pero nos llegan ${t.fem ? "nuevas" : "nuevos"} seguido. Contanos qué buscás y te avisamos.`}
       related={typePages(all)
         .filter((x) => x.type !== type)
         .map((x) => ({ label: x.title, href: `/propiedades/tipo/${x.slug}`, count: x.count }))}
