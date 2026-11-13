@@ -31,8 +31,9 @@ export default async function PropiedadesPage() {
         {/* Page header */}
         <header className="relative overflow-hidden bg-celadon-400 px-6 pb-16 pt-36 text-moss-900 md:px-10 md:pb-24 md:pt-44">
           {/* Decorative NÚA wordmark backdrop */}
-          <div aria-hidden className="pointer-events-none absolute -bottom-[35%] -right-[4%] w-[55%] text-moss-900/[0.05] md:w-[40%]">
-            <Logo className="h-auto w-full" />
+          {/* Entero (antes quedaba cortado abajo y a la derecha) y "respira". */}
+          <div aria-hidden className="pointer-events-none absolute right-[4%] top-1/2 w-[92%] -translate-y-[46%] text-moss-900 md:right-[3%] md:w-[64%]">
+            <Logo className="nua-breathe h-auto w-full" />
           </div>
           <div className="relative mx-auto max-w-7xl">
             <p className="text-eyebrow mb-6 text-moss-700">

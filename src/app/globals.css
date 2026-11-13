@@ -941,6 +941,24 @@ select.admin-input {
     opacity: 0;
   }
 }
+/* Logo de fondo que "respira" (hero de Propiedades) */
+.nua-breathe {
+  opacity: 0.055;
+  transform-origin: center;
+  animation: nua-breathe 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes nua-breathe {
+  50% {
+    opacity: 0.1;
+    transform: scale(1.045);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nua-breathe {
+    animation: none;
+  }
+}
 /* Menús de la barra de filtros (compu) */
 .nua-pop {
   animation: nua-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
